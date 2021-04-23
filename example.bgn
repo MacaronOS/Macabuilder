@@ -1,0 +1,41 @@
+Include:
+    kernel, userspace,
+SOME_ERROR_FOR_FUTURE_PARSER_HERE
+
+Define:
+    MOUNT_EXT2: fuse-ext2
+    DISK: drive.img
+    QEMU: qemu-system-i386
+    TARGET_EXEC: wisteriaOS
+
+Commands:
+    Install:
+        sudo [MOUNT_EXT2] [DISK] mountpoint -o rw+,
+        sudo mkdir -p mountpoint/apps/,
+        sudo umount mountpoint,
+
+Build:
+    Type: StaticLib
+
+    Depends:
+        wisterialib, libc
+
+    Src:
+        folder/*.cpp,
+        crt0.s
+
+    Extensions:
+        cpp: 
+            compiler: g++
+            flags:
+                fno-use-cxa-atexit -fno-rtti -fno-exceptions,
+                -nostdlib -nostdinc -fno-builtin -fno-stack-protector -ffreestanding,
+                -m32 -Iinclude -fno-leading-underscore -Wno-write-strings
+
+        s: compiler: nasm
+
+    Run:
+        [QEMU] -kernel [TARGET_EXEC]
+
+Default:
+    Build, Install, Run
