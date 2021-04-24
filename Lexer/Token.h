@@ -11,34 +11,38 @@ public:
     };
 
 public:
-    Token(std::string content, Type type, int nesting)
+    Token(std::string content, Type type, int nesting, size_t line)
         : m_content(std::move(content))
         , m_type(type)
         , m_nesting(nesting)
+        , m_line(line)
     {
     }
 
-    Token(Type type, int nesting)
+    Token(Type type, int nesting, size_t line)
         : m_type(type)
         , m_nesting(nesting)
+        , m_line(line)
     {
     }
 
-    static Token TokenFromChar(char c, int nesting = 0)
+    static Token TokenFromChar(char c, int nesting, size_t line)
     {
         if (c == ',') {
-            return Token(Type::Comma, nesting);
+            return Token(Type::Comma, nesting, line);
         }
         if (c == ':') {
-            return Token(Type::SubRule, nesting);
+            return Token(Type::SubRule, nesting, line);
         }
-        return Token(Type::Default, nesting);
+        return Token(Type::Default, nesting, line);
     }
 
     std::string& content() { return m_content; }
     const std::string& content() const { return m_content; }
 
     Type type() const { return m_type; }
+    int nesting() const { return m_nesting; }
+    size_t line() const { return m_line; }
 
     std::string to_string() const
     {
@@ -55,4 +59,6 @@ private:
     std::string m_content;
     Type m_type;
     int m_nesting;
+
+    size_t m_line {};
 };

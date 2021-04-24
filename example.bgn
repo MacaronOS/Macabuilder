@@ -1,6 +1,5 @@
 Include:
     kernel, userspace,
-SOME_ERROR_FOR_FUTURE_PARSER_HERE
 
 Define:
     MOUNT_EXT2: fuse-ext2
@@ -14,6 +13,9 @@ Commands:
         sudo mkdir -p mountpoint/apps/,
         sudo umount mountpoint,
 
+    Run:
+        [QEMU] -kernel [TARGET_EXEC]
+
 Build:
     Type: StaticLib
 
@@ -25,17 +27,14 @@ Build:
         crt0.s
 
     Extensions:
-        cpp: 
-            compiler: g++
-            flags:
+        cpp:
+            Compiler: g++
+            Flags:
                 fno-use-cxa-atexit -fno-rtti -fno-exceptions,
                 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -ffreestanding,
                 -m32 -Iinclude -fno-leading-underscore -Wno-write-strings
 
-        s: compiler: nasm
-
-    Run:
-        [QEMU] -kernel [TARGET_EXEC]
+        s: Compiler: nasm
 
 Default:
     Build, Install, Run

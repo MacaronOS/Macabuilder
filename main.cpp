@@ -1,16 +1,8 @@
-#include "Lexer/Lexer.h"
-
-#include <fstream>
-#include <iostream>
+#include "Context.h"
 
 int main()
 {
-    std::ifstream myfile("example.bgn");
-    if (myfile.is_open()) {
-        auto l = Lexer(myfile);
-        l.run();
-    } else {
-        std::cout << "Unable to open file";
-    }
+    auto context = Context("example.bgn", Context::Operation::Parse);
+    context.run();
     return 0;
 }

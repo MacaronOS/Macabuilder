@@ -7,19 +7,21 @@
 
 class Lexer {
 public:
-    explicit Lexer(std::ifstream& input)
-        : m_stream(input)
-    {
-    }
+    Lexer() = default;
+    explicit Lexer(const std::string& path);
+    ~Lexer();
 
-    ~Lexer()
-    {
-        if (m_stream.is_open()) {
-            m_stream.close();
-        }
-    }
+    Lexer(const Lexer&) = delete;
+    Lexer& operator=(const Lexer&) = delete;
 
+    Lexer(Lexer&&) noexcept;
+    Lexer& operator=(Lexer&&) noexcept;
+
+public:
     void run();
+
+public:
+    const std::vector<Token>& tokens() const { return m_tokens; }
 
 private:
     int calc_nesting_for_cur_line();
@@ -49,9 +51,10 @@ private:
     }
 
 private:
-    std::ifstream& m_stream;
+    std::ifstream m_stream {};
     std::size_t m_line_idx {};
     std::string m_cur_line {};
 
+    std::size_t m_token_line { 1 };
     std::vector<Token> m_tokens {};
 };
