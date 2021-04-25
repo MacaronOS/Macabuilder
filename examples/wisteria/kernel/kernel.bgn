@@ -1,0 +1,25 @@
+Define:
+    KEY: VALUE
+
+Build:
+    Type: Executable
+
+    Depends:
+        wisterialib, libc
+
+    Src:
+        folder/*.cpp,
+        crt0.s
+
+    Extensions:
+        cpp:
+            Compiler: g++
+            Flags:
+                fno-use-cxa-atexit -fno-rtti -fno-exceptions,
+                -nostdlib -nostdinc -fno-builtin -fno-stack-protector -ffreestanding,
+                -m32 -Iinclude -fno-leading-underscore -Wno-write-strings
+
+        s: Compiler: nasm
+
+Default:
+    Build, Install, Run

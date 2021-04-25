@@ -14,6 +14,7 @@
 #include "Parser/Field/IncludeField.h"
 
 #include <string>
+#include <thread>
 #include <unordered_map>
 
 class Context {
@@ -35,7 +36,19 @@ public:
 
 public:
     Context(const std::string& path, Operation operation);
+
+public:
     void run();
+
+    Context* create_child(const std::string& path, Operation operation)
+    {
+        auto child = new Context(path, operation);
+        m_childs.push_back(child);
+        return child;
+    }
+
+public:
+    bool done() const { return m_done; }
 
 private:
     bool parse();
@@ -51,5 +64,12 @@ private:
     BuildField m_build {};
     DefaultField m_default {};
 
+    Parser parser {};
+
+    std::thread* m_thread {};
+
     State m_state { State::NotStarted };
+    bool m_done {};
+
+    std::vector<Context*> m_childs {};
 };

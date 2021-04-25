@@ -15,7 +15,14 @@ class Context;
 
 class Parser {
 public:
+    Parser() = default;
     Parser(const std::string& path, Context* context);
+
+    Parser(const Parser&) = delete;
+    Parser& operator=(const Parser&) = delete;
+
+    Parser(Parser&&) noexcept;
+    Parser& operator=(Parser&&) noexcept;
 
     void run();
 
@@ -69,7 +76,7 @@ private:
     }
 
 private:
-    Context* context;
+    Context* context {};
     Lexer lexer {};
     std::size_t m_tokens_idx {};
 };

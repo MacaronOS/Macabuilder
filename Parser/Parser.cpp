@@ -11,6 +11,20 @@ Parser::Parser(const std::string& path, Context* context)
     lexer = Lexer(path);
 }
 
+Parser::Parser(Parser&& parser) noexcept
+{
+    *this = std::move(parser);
+}
+
+Parser& Parser::operator=(Parser&& parser) noexcept
+{
+    lexer = std::move(parser.lexer);
+    m_tokens_idx = parser.m_tokens_idx;
+    context = parser.context;
+    parser.context = nullptr;
+    return *this;
+}
+
 void Parser::run()
 {
     std::cout << "Running Lexer" << std::endl;
@@ -20,6 +34,13 @@ void Parser::run()
     while (auto token = lookup()) {
         if (token->content() == "Include") {
             parse_include();
+            // as soon as include list is parsed, we are ready to process other files in different threads
+            for (auto path : context->m_include.pats()) {
+                // TODO: Path should be calculated properly. It's done that way only in demo purpose
+                if (*path == "kernel") {
+                    context->create_child("examples/wisteria/kernel/kernel.bgn", Context::Operation::Parse)->run();
+                }
+            }
         } else if (token->content() == "Define") {
             parse_defines();
         } else if (token->content() == "Commands") {
