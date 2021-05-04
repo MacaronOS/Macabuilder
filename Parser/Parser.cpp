@@ -62,7 +62,7 @@ void Parser::parse_include()
     eat_sub_rule_hard();
 
     parse_argument_list([this](const Token& token) {
-        context->m_include.add_path(token.content());
+        context->m_include.add_path(token.content_ptr());
     });
 }
 
@@ -79,7 +79,7 @@ void Parser::parse_defines()
         if (!value || value->line() != key.line()) {
             trigger_error_on_line(key.line(), "invalid pair for a key");
         }
-        context->m_defines.add_define(key.content(), value->content());
+        context->m_defines.add_define(key.content(), value->content_ptr());
     });
 }
 
@@ -91,7 +91,7 @@ void Parser::parse_commands()
     parse_line_by_line(1, [this](const Token& cmd) {
         eat_sub_rule_hard();
         parse_argument_list([&](const Token& token) {
-            context->m_commands.append_to_command(cmd.content(), token.content());
+            context->m_commands.append_to_command(cmd.content(), token.content_ptr());
         });
     });
 }
@@ -111,12 +111,12 @@ void Parser::parse_build()
         } else if (build_subfield.content() == "Depends") {
             eat_sub_rule_hard();
             parse_argument_list([&](const Token& dependency) {
-                context->m_build.add_dependency(dependency.content());
+                context->m_build.add_dependency(dependency.content_ptr());
             });
         } else if (build_subfield.content() == "Src") {
             eat_sub_rule_hard();
             parse_argument_list([&](const Token& source) {
-                context->m_build.add_source(source.content());
+                context->m_build.add_source(source.content_ptr());
             });
         } else if (build_subfield.content() == "Extensions") {
             eat_sub_rule_hard();
@@ -135,13 +135,13 @@ void Parser::parse_build()
                             if (!compiler) {
                                 trigger_error_on_line(compiler_or_flag->line(), " no compiler is specified");
                             }
-                            if (!context->m_build.set_compiler_to_extension(extension.content(), compiler->content())) {
+                            if (!context->m_build.set_compiler_to_extension(extension.content_ptr(), compiler->content_ptr())) {
                                 trigger_error_on_line(compiler->line(), "compiler redefinition");
                             }
                         } else if (compiler_or_flag->content() == "Flags") {
                             eat_sub_rule_hard();
                             parse_argument_list([&](const Token& flag) {
-                                context->m_build.add_flag_to_extension(extension.content(), flag.content());
+                                context->m_build.add_flag_to_extension(extension.content_ptr(), flag.content_ptr());
                             });
                         } else {
                             trigger_error_on_line(compiler_or_flag->line(), "invalid option for extension - " + compiler_or_flag->content());
@@ -163,7 +163,7 @@ void Parser::parse_default()
     eat_sub_rule_hard();
 
     parse_argument_list([this](const Token& token) {
-        context->m_default.add_command_to_sequence(token.content());
+        context->m_default.add_command_to_sequence(token.content_ptr());
     });
 }
 

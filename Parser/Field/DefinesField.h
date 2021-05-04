@@ -6,16 +6,17 @@
 class DefinesField {
 public:
     DefinesField() = default;
-    inline bool add_define(const std::string& key, const std::string& value)
+    inline bool add_define(const std::string& key, const std::shared_ptr<std::string>& value)
     {
-        if (m_defines.contains(&key)) [[unlikely]] {
+        if (m_defines.contains(key)) [[unlikely]] {
             return false;
         }
-        m_defines[&key] = &value;
+        m_defines[key] = value;
         return true;
     }
-    const std::unordered_map<std::string const*, std::string const*>& defines() const { return m_defines; }
+
+    auto& defines() const { return m_defines; }
 
 private:
-    std::unordered_map<std::string const*, std::string const*> m_defines;
+    std::unordered_map<std::string, std::shared_ptr<std::string>> m_defines;
 };

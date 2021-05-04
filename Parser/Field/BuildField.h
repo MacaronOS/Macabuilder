@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -12,8 +13,8 @@ public:
     };
 
     struct ExtensionOption {
-        std::string const* compiler {};
-        std::vector<std::string const*> flags {};
+        std::shared_ptr<std::string> compiler;
+        std::vector<std::shared_ptr<std::string>> flags {};
     };
 
 public:
@@ -31,33 +32,45 @@ public:
         return true;
     }
 
-    inline void add_dependency(const std::string& dependency)
+    inline void add_dependency(const std::shared_ptr<std::string>& dependency)
     {
-        m_depends.push_back(&dependency);
+        m_depends.push_back(dependency);
     }
 
-    inline void add_source(const std::string& source)
+    inline void add_source(const std::shared_ptr<std::string>& source)
     {
-        m_sources.push_back(&source);
+        m_sources.push_back(source);
     }
 
-    inline bool set_compiler_to_extension(const std::string& extension, const std::string& compiler)
+    inline bool set_compiler_to_extension(const std::shared_ptr<std::string>& extension, const std::shared_ptr<std::string>& compiler)
     {
-        if (m_extensions[&extension].compiler) [[unlikely]] {
+        if (m_extensions[*extension].compiler) [[unlikely]] {
             return false;
         }
-        m_extensions[&extension].compiler = &compiler;
+        m_extensions[*extension].compiler = compiler;
         return true;
     }
 
-    inline void add_flag_to_extension(const std::string& extension, const std::string& flag)
+    inline void add_flag_to_extension(const std::shared_ptr<std::string>& extension, const std::shared_ptr<std::string>& flag)
     {
-        m_extensions[&extension].flags.push_back(&flag);
+        m_extensions[*extension].flags.push_back(flag);
+    }
+
+    inline Type type() const { return m_type; }
+
+    inline const auto& sources() const { return m_sources; }
+
+    inline ExtensionOption* get_option_for_extension(const std::string& extension)
+    {
+        if (!m_extensions.contains(extension)) {
+            return nullptr;
+        }
+        return &m_extensions[extension];
     }
 
 private:
     Type m_type {};
-    std::vector<std::string const*> m_depends {};
-    std::vector<std::string const*> m_sources {};
-    std::unordered_map<std::string const*, ExtensionOption> m_extensions;
+    std::vector<std::shared_ptr<std::string>> m_depends {};
+    std::vector<std::shared_ptr<std::string>> m_sources {};
+    std::unordered_map<std::string, ExtensionOption> m_extensions;
 };

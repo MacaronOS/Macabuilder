@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -12,7 +13,7 @@ public:
 
 public:
     Token(std::string content, Type type, int nesting, size_t line)
-        : m_content(std::move(content))
+        : m_content(new std::string(std::move(content)))
         , m_type(type)
         , m_nesting(nesting)
         , m_line(line)
@@ -37,8 +38,11 @@ public:
         return Token(Type::Default, nesting, line);
     }
 
-    std::string& content() { return m_content; }
-    const std::string& content() const { return m_content; }
+    auto& content() { return *m_content; }
+    const auto& content() const { return *m_content; }
+
+    auto& content_ptr() { return m_content; }
+    auto& content_ptr() const { return m_content; }
 
     Type type() const { return m_type; }
     int nesting() const { return m_nesting; }
@@ -56,7 +60,7 @@ public:
     }
 
 private:
-    std::string m_content;
+    std::shared_ptr<std::string> m_content {};
     Type m_type;
     int m_nesting;
 
