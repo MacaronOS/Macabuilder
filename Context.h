@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "Executor/Executor.h"
+#include "Finder/Finder.h"
 #include "Parser/Parser.h"
 
 #include "Parser/Field/BuildField.h"
@@ -19,6 +21,7 @@
 
 class Context {
     friend class Parser;
+    friend class Executor;
 
 public:
     enum class State {
@@ -35,41 +38,56 @@ public:
     };
 
 public:
-    Context(const std::string& path, Operation operation);
+    Context(std::filesystem::path path, Operation operation);
 
 public:
     void run();
 
-    Context* create_child(const std::string& path, Operation operation)
+    bool run_as_childs(const std::string& pattern, Operation operation)
     {
-        auto child = new Context(path, operation);
-        m_childs.push_back(child);
-        return child;
+        auto beegn_files = Finder::FindBeegnFiles(directory(), pattern);
+        if (beegn_files.empty()) {
+            return false;
+        }
+        for (auto& path : beegn_files) {
+            auto child = new Context(path, operation);
+            m_children.push_back(child);
+            child->run();
+        }
+        return true;
     }
 
 public:
     bool done() const { return m_done; }
+    Operation operation() const { return m_operation; };
+    std::filesystem::path directory() const { return m_path.parent_path(); }
 
 private:
-    bool parse();
+    bool merge_children();
     bool build();
 
 private:
-    std::string m_path;
+    std::thread* m_thread {};
+    std::filesystem::path m_path;
     Operation m_operation;
+    State m_state { State::NotStarted };
+    bool m_done {};
 
+    // Parser
+    Parser parser {};
     IncludeField m_include {};
     DefinesField m_defines {};
     CommandsField m_commands {};
     BuildField m_build {};
     DefaultField m_default {};
 
-    Parser parser {};
+    // Executor
+    std::atomic<int> compile_counter {};
+    bool done_linker {};
 
-    std::thread* m_thread {};
+    // childs options
+    std::vector<Context*> m_children {};
 
-    State m_state { State::NotStarted };
-    bool m_done {};
-
-    std::vector<Context*> m_childs {};
+    // if included context contains a build field it's going to be built separately
+    std::vector<BuildField> m_children_builds {};
 };

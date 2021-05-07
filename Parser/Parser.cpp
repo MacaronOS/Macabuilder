@@ -27,18 +27,15 @@ Parser& Parser::operator=(Parser&& parser) noexcept
 
 void Parser::run()
 {
-    std::cout << "Running Lexer" << std::endl;
     lexer.run();
-    std::cout << "Running Parser" << std::endl;
 
     while (auto token = lookup()) {
         if (token->content() == "Include") {
             parse_include();
             // as soon as include list is parsed, we are ready to process other files in different threads
-            for (auto path : context->m_include.pats()) {
-                // TODO: Path should be calculated properly. It's done that way only in demo purpose
-                if (*path == "kernel") {
-                    context->create_child("examples/wisteria/kernel/kernel.bgn", Context::Operation::Parse)->run();
+            for (auto& path : context->m_include.paths()) {
+                if (!context->run_as_childs(*path, Context::Operation::Parse)) {
+                    trigger_error_on_line(token->line(), "Included path \"" + *path + "\" does not exist");
                 }
             }
         } else if (token->content() == "Define") {

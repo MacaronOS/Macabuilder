@@ -5,6 +5,7 @@
 enum class Color {
     Red = 31,
     Green = 32,
+    Yellow = 33,
     Blue = 34,
 };
 
