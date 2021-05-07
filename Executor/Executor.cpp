@@ -28,10 +28,10 @@ void Executor::run()
                 cmd.executable_unit()->ctx->compile_counter--;
             } else {
                 if (cmd.exit_status()) {
-                    Log(Color::Red, "Link error:", cmd.executable_unit()->src);
+                    Log(Color::Red, "Link error:", *cmd.executable_unit()->binary);
                 } else {
                     if (!cmd.std_out().empty() || !cmd.std_err().empty()) {
-                        Log(Color::Yellow, "Linked with warnings:", cmd.executable_unit()->src);
+                        Log(Color::Yellow, "Linked with warnings:", *cmd.executable_unit()->binary);
                     } else {
                         Log(Color::Green, "Linked:", *cmd.executable_unit()->binary);
                     }

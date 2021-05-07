@@ -14,6 +14,7 @@
 #include "Parser/Field/DefaultField.h"
 #include "Parser/Field/DefinesField.h"
 #include "Parser/Field/IncludeField.h"
+#include "Parser/Field/LinkField.h"
 
 #include <string>
 #include <thread>
@@ -80,6 +81,7 @@ private:
     CommandsField m_commands {};
     BuildField m_build {};
     DefaultField m_default {};
+    LinkField m_link {};
 
     // Executor
     std::atomic<int> compile_counter {};

@@ -34,5 +34,8 @@ Build:
 
         s: Compiler: nasm
 
+    Link:
+        Linker: g++
+
 Default:
     Build, Install, Run

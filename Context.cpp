@@ -106,21 +106,19 @@ bool Context::build()
 
     // link objects
     if (!objects.empty()) {
-        auto flags = std::vector<std::shared_ptr<std::string>>();
-        std::copy(objects.begin(), objects.end(), std::back_inserter(flags));
-        flags.push_back(std::make_shared<std::string>("-o"));
+        // add objects and the output binary path to the linker flags
+        std::copy(objects.begin(), objects.end(), std::back_inserter(m_link.flags()));
+        m_link.flags().push_back(std::make_shared<std::string>("-o"));
         auto link_exec = std::make_shared<std::string>("BeegnBuild" / directory() / directory().filename());
-        flags.push_back(link_exec);
-
-        auto linker = std::make_shared<std::string>("g++");
+        m_link.flags().push_back(link_exec);
 
         Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
             .op = ::Operation::Link,
             .ctx = this,
-            .callee = linker,
+            .callee = m_link.linker(),
             .src = {},
             .binary = link_exec,
-            .args = std::move(flags),
+            .args = std::move( m_link.flags()),
         }));
 
         while (!done_linker) {

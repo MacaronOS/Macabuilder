@@ -30,6 +30,9 @@ void Parser::run()
     lexer.run();
 
     while (auto token = lookup()) {
+        if (token->type() != Token::Type::Default || !token->content_ptr()) {
+            trigger_error_on_line(token->line(), "met unexpected token ");
+        }
         if (token->content() == "Include") {
             parse_include();
             // as soon as include list is parsed, we are ready to process other files in different threads
@@ -150,6 +153,29 @@ void Parser::parse_build()
                     trigger_error_on_line(extension.line(), "no options specified for extension");
                 }
             });
+        } else if (build_subfield.content() == "Link") {
+            eat_sub_rule_hard();
+
+            parse_line_by_line(2, [this](const Token& linker_or_flags) {
+                if (linker_or_flags.content() == "Linker") {
+                    eat_sub_rule_hard();
+                    auto linker = parse_single_argument_of_rule(linker_or_flags);
+                    if (!linker) {
+                        trigger_error_on_line(linker_or_flags.line(), "no linker is specified");
+                    } else {
+                        context->m_link.set_linker(linker->content_ptr());
+                    }
+                } else if (linker_or_flags.content() == "Flags") {
+                    eat_sub_rule_hard();
+                    parse_argument_list_of_rule(linker_or_flags, [this](const Token& flag) {
+                        context->m_link.add_flag(flag.content_ptr());
+                    });
+                } else {
+                    trigger_error_on_line(linker_or_flags.line(), "unknown Link option \"" + linker_or_flags.content() + "\"");
+                }
+            });
+        } else {
+            trigger_error_on_line(build_subfield.line(), "met unexpected Build subfield \"" + build_subfield.content() + "\"");
         }
     });
 }
