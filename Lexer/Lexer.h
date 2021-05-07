@@ -21,6 +21,7 @@ public:
     void run();
 
 public:
+    const std::string path() const { return m_path; }
     const std::vector<Token>& tokens() const { return m_tokens; }
 
 private:
@@ -51,6 +52,7 @@ private:
     }
 
 private:
+    std::string m_path {};
     std::ifstream m_stream {};
     std::size_t m_line_idx {};
     std::string m_cur_line {};

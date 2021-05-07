@@ -69,9 +69,9 @@ private:
         return token;
     }
 
-    static void trigger_error_on_line(size_t line, const std::string& error)
+    void trigger_error_on_line(size_t line, const std::string& error)
     {
-        std::cout << "line " << line << ": " << error << std::endl;
+        std::cout << lexer.path() << ", line " << line << ": " << error << std::endl;
         exit(1);
     }
 

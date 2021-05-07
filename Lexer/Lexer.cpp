@@ -3,6 +3,7 @@
 #include <iostream>
 
 Lexer::Lexer(const std::string& path)
+    : m_path(path)
 {
     m_stream.open(path, std::ifstream::in);
 }
@@ -21,6 +22,7 @@ Lexer::Lexer(Lexer&& lexer) noexcept
 
 Lexer& Lexer::operator=(Lexer&& lexer) noexcept
 {
+    m_path = std::move(lexer.m_path);
     m_stream = std::move(lexer.m_stream);
     m_tokens = std::move(lexer.m_tokens);
     m_line_idx = lexer.m_line_idx;
@@ -51,9 +53,6 @@ void Lexer::run()
         }
     }
 
-    for (const auto& token : m_tokens) {
-        std::cout << token.to_string() << ", ";
-    }
 }
 int Lexer::calc_nesting_for_cur_line()
 {
