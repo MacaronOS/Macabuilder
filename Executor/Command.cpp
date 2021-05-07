@@ -2,9 +2,11 @@
 
 #include <array>
 #include <fcntl.h>
+#include <iostream>
 #include <unistd.h>
+#include <vector>
 
-Command::Command()
+void Command::open_descriptors()
 {
     // opening stdout file descriptors
     int res = pipe(m_out_fds);
@@ -27,16 +29,18 @@ Command::Command()
     }
 }
 
-Command::~Command()
+void Command::execute(const std::string& compiler, const std::vector<std::shared_ptr<std::string>>& args)
 {
-    close(m_out_fds[read_ptr]);
-    close(m_out_fds[write_ptr]);
-    close(m_err_fds[read_ptr]);
-    close(m_err_fds[write_ptr]);
-}
+    std::vector<char*> cmd_args {};
+    cmd_args.push_back(const_cast<char*>(compiler.data()));
 
-void Command::execute(const std::string& command)
-{
+    for (auto& arg : args) {
+        cmd_args.push_back(arg->data());
+    }
+
+    cmd_args.push_back(nullptr);
+
+    m_fetched = false;
     m_done = false;
     m_exit_status = 0;
     m_std_out.clear();
@@ -48,10 +52,13 @@ void Command::execute(const std::string& command)
     }
 
     if (m_command_pid == 0) {
-        dup2(m_out_fds[write_ptr], STDOUT_FILENO);
-        dup2(m_err_fds[write_ptr], STDERR_FILENO);
-
-        execl("/bin/bash", "bash", "-c", command.c_str(), nullptr);
+        if (dup2(m_out_fds[write_ptr], STDOUT_FILENO) < 0) {
+            exit(1);
+        }
+        if (dup2(m_err_fds[write_ptr], STDERR_FILENO) < 0) {
+            exit(1);
+        }
+        execvp(cmd_args[0], cmd_args.data());
     }
 }
 
@@ -62,20 +69,28 @@ bool Command::done()
     }
 
     int status = 0;
+    int res = waitpid(m_command_pid, &status, WNOHANG);
 
-    if (waitpid(m_command_pid, &status, WNOHANG) <= 0) {
+    // command is running
+    if (res == 0) {
         return false;
+    }
+
+    if (res < 0) {
+        m_exit_status = errno;
+        m_done = true;
+        return true;
     }
 
     if (WIFEXITED(status)) {
         m_exit_status = WEXITSTATUS(status);
     }
 
-    std::array<char, 256> buffer {};
+    auto buffer = std::array<char, 256>();
 
     while (true) {
         int out_bytes = read(m_out_fds[read_ptr], buffer.data(), buffer.size());
-        if (out_bytes < 0) {
+        if (out_bytes <= 0) {
             break;
         }
         m_std_out.append(buffer.data(), out_bytes);
@@ -83,7 +98,7 @@ bool Command::done()
 
     while (true) {
         int err_bytes = read(m_err_fds[read_ptr], buffer.data(), buffer.size());
-        if (err_bytes < 0) {
+        if (err_bytes <= 0) {
             break;
         }
         m_std_err.append(buffer.data(), err_bytes);

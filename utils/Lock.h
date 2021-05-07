@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 template <class Lock>
 class ScopedLocker {
 public:
