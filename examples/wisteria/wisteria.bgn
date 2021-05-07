@@ -1,5 +1,5 @@
 Include:
-    kernel, userspace,
+    kernel
 
 Define:
     MOUNT_EXT2: fuse-ext2
@@ -30,9 +30,7 @@ Build:
         cpp:
             Compiler: g++
             Flags:
-                fno-use-cxa-atexit -fno-rtti -fno-exceptions,
-                -nostdlib -nostdinc -fno-builtin -fno-stack-protector -ffreestanding,
-                -m32 -Iinclude -fno-leading-underscore -Wno-write-strings
+                -std=c++17, -fno-use-cxa-atexit, -fno-rtti, -fno-exceptions,
 
         s: Compiler: nasm
 
