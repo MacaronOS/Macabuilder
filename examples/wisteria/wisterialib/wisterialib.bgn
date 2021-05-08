@@ -1,0 +1,11 @@
+Build:
+    Type: StaticLib
+
+    Src: library.cpp
+
+    Extensions:
+        cpp:
+            Compiler: g++
+            Flags: -std=c++17
+
+    Archiver: ar

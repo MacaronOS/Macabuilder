@@ -5,7 +5,7 @@
 
 int main()
 {
-    auto context = Context("examples/wisteria/wisteria.bgn", Context::Operation::Parse);
+    auto context = Context("examples/wisteria/wisteria.bgn", Context::Operation::Build);
     context.run();
 
     Executor::the().run();

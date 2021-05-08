@@ -4,9 +4,6 @@ Define:
 Build:
     Type: Executable
 
-    Depends:
-        wisterialib, libc
-
     Src:
         folder/*.cpp,
         crt0.s

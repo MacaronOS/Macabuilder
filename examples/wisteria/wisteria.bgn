@@ -17,10 +17,10 @@ Commands:
         [QEMU] -kernel [TARGET_EXEC]
 
 Build:
-    Type: StaticLib
+    Type: Executable
 
     Depends:
-        wisterialib, libc
+        wisterialib
 
     Src:
         folder/*.cpp,
@@ -34,7 +34,8 @@ Build:
 
         s: Compiler: nasm
 
-    Archiver: ar
+    Link:
+        Linker: g++
 
 Default:
     Build, Install, Run
