@@ -89,9 +89,9 @@ bool Context::build()
                 continue;
             }
 
-            Finder::CreateDirectory("BeegnBuild" / Finder::GetFolder(file));
+            Finder::CreateDirectory("BeelderBuild" / Finder::GetFolder(file));
 
-            auto object = std::make_shared<std::string>(("BeegnBuild" / file).string() + ".o");
+            auto object = std::make_shared<std::string>(("BeelderBuild" / file).string() + ".o");
 
             auto flags = option->flags;
 

@@ -7,14 +7,14 @@
 
 int main()
 {
-    auto beegn_files = Finder::FindRootBeegnFiles();
+    auto beelder_files = Finder::FindRootBeelderFiles();
 
-    if (beegn_files.size() > 1) {
+    if (beelder_files.size() > 1) {
         Log(Color::Red, "multiple root files are presented");
         exit(1);
     }
 
-    auto root = beegn_files[0];
+    auto root = beelder_files[0];
 
     auto context = Context(root, Context::Operation::Build);
     context.run();

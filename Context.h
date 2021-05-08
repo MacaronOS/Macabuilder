@@ -1,5 +1,5 @@
 /*
- * Context object is an internal representation of a Beegn file,
+ * Context object is an internal representation of a Beelder file,
  * which is being processed by a thread.
  */
 
@@ -46,11 +46,11 @@ public:
 
     bool run_as_childs(const std::string& pattern, Operation operation)
     {
-        auto beegn_files = Finder::FindBeegnFiles(directory(), pattern);
-        if (beegn_files.empty()) {
+        auto beelder_files = Finder::FindBeelderFiles(directory(), pattern);
+        if (beelder_files.empty()) {
             return false;
         }
-        for (auto& path : beegn_files) {
+        for (auto& path : beelder_files) {
             auto child = new Context(path, operation);
             m_children.push_back(child);
             child->run();
@@ -67,9 +67,9 @@ public:
         if (filename.empty()) {
             filename = m_path.stem();
         }
-        return "BeegnBuild" / directory() / filename;
+        return "BeelderBuild" / directory() / filename;
     }
-    inline std::string static_library_path() const { return ("BeegnBuild" / directory() / directory().filename()).string() + ".a"; }
+    inline std::string static_library_path() const { return executable_path() + ".a"; }
 
 private:
     void validate_fields();

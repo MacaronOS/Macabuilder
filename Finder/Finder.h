@@ -9,16 +9,16 @@
 #include <vector>
 
 class Finder {
-    static constexpr auto BeegnExtensionPattern = "*.bgn";
+    static constexpr auto BeelderExtensionPattern = "*.bee";
 
 public:
-    static inline auto FindRootBeegnFiles()
+    static inline auto FindRootBeelderFiles()
     {
-        return glob(BeegnExtensionPattern);
+        return glob(BeelderExtensionPattern);
     }
-    static inline auto FindBeegnFiles(const std::string& directory, const std::string& pattern = "")
+    static inline auto FindBeelderFiles(const std::string& directory, const std::string& pattern = "")
     {
-        auto path = std::filesystem::path(directory) / std::filesystem::path(pattern) / BeegnExtensionPattern;
+        auto path = std::filesystem::path(directory) / std::filesystem::path(pattern) / BeelderExtensionPattern;
         return glob(path);
     }
 
