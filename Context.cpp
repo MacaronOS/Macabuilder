@@ -20,6 +20,7 @@ void Context::run()
 {
     m_thread = new std::thread([this]() {
         parser.run();
+        validate_fields();
         merge_children();
         build();
 
@@ -32,6 +33,19 @@ void Context::run()
 
         m_done = true;
     });
+}
+
+void Context::validate_fields()
+{
+    if (m_build.type() == BuildField::Type::Executable) {
+        if (m_build.archiver()) {
+            trigger_error("can\'t use Archiver subfield for Executable type");
+        }
+    } else if (m_build.type() == BuildField::Type::StaticLib) {
+        if (m_build.linker() || !m_build.linker_flags().empty()) {
+            trigger_error("can\'t use Link subfield for StaticLib type");
+        }
+    }
 }
 
 bool Context::merge_children()
@@ -104,24 +118,42 @@ bool Context::build()
         std::this_thread::yield();
     }
 
-    // link objects
+    // finalize objects
     if (!objects.empty()) {
-        // add objects and the output binary path to the linker flags
-        std::copy(objects.begin(), objects.end(), std::back_inserter(m_link.flags()));
-        m_link.flags().push_back(std::make_shared<std::string>("-o"));
-        auto link_exec = std::make_shared<std::string>("BeegnBuild" / directory() / directory().filename());
-        m_link.flags().push_back(link_exec);
+        if (m_build.type() == BuildField::Type::StaticLib) {
+            auto lib_name = std::make_shared<std::string>(("BeegnBuild" / directory() / directory().filename()).string() + ".a");
 
-        Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
-            .op = ::Operation::Link,
-            .ctx = this,
-            .callee = m_link.linker(),
-            .src = {},
-            .binary = link_exec,
-            .args = std::move( m_link.flags()),
-        }));
+            auto archiver_flags = std::vector<std::shared_ptr<std::string>>();
+            archiver_flags.push_back( std::make_shared<std::string>("rcs"));
+            archiver_flags.push_back( lib_name);
+            std::copy(objects.begin(), objects.end(), std::back_inserter(archiver_flags));
 
-        while (!done_linker) {
+            Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
+                .op = ::Operation::Archive,
+                .ctx = this,
+                .callee = m_build.archiver(),
+                .src = {},
+                .binary = lib_name,
+                .args = std::move(archiver_flags),
+            }));
+        } else {
+            // add objects and the output binary path to the linker flags
+            std::copy(objects.begin(), objects.end(), std::back_inserter(m_build.linker_flags()));
+            m_build.linker_flags().push_back(std::make_shared<std::string>("-o"));
+            auto link_exec = std::make_shared<std::string>("BeegnBuild" / directory() / directory().filename());
+            m_build.linker_flags().push_back(link_exec);
+
+            Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
+                .op = ::Operation::Link,
+                .ctx = this,
+                .callee = m_build.linker(),
+                .src = {},
+                .binary = link_exec,
+                .args = std::move(m_build.linker_flags()),
+            }));
+        }
+
+        while (!done_finalizer) {
             std::this_thread::yield();
         }
     }

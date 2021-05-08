@@ -7,6 +7,7 @@
 
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
+#include "Logger.h"
 #include "Parser/Parser.h"
 
 #include "Parser/Field/BuildField.h"
@@ -14,7 +15,6 @@
 #include "Parser/Field/DefaultField.h"
 #include "Parser/Field/DefinesField.h"
 #include "Parser/Field/IncludeField.h"
-#include "Parser/Field/LinkField.h"
 
 #include <string>
 #include <thread>
@@ -64,8 +64,16 @@ public:
     std::filesystem::path directory() const { return m_path.parent_path(); }
 
 private:
+    void validate_fields();
     bool merge_children();
     bool build();
+
+private:
+    inline void trigger_error(const std::string& error)
+    {
+        Log(Color::Red, m_path.string() + ":", error);
+        exit(1);
+    }
 
 private:
     std::thread* m_thread {};
@@ -81,11 +89,10 @@ private:
     CommandsField m_commands {};
     BuildField m_build {};
     DefaultField m_default {};
-    LinkField m_link {};
 
     // Executor
     std::atomic<int> compile_counter {};
-    bool done_linker {};
+    bool done_finalizer {};
 
     // childs options
     std::vector<Context*> m_children {};

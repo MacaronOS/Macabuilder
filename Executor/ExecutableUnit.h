@@ -7,6 +7,7 @@
 enum class Operation {
     Compile,
     Link,
+    Archive,
 };
 
 class Context;

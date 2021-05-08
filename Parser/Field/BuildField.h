@@ -56,9 +56,15 @@ public:
         m_extensions[*extension].flags.push_back(flag);
     }
 
-    inline Type type() const { return m_type; }
+    void set_linker(const std::shared_ptr<std::string>& linker) { m_linker = linker; }
+    void set_archiver(const std::shared_ptr<std::string>& archiver) { m_archiver = archiver; }
+    void add_linker_flag(const std::shared_ptr<std::string>& flag) { m_linker_flags.push_back(flag); }
 
+    inline Type type() const { return m_type; }
     inline const auto& sources() const { return m_sources; }
+    auto& linker() { return m_linker; }
+    auto& archiver() { return m_archiver; }
+    auto& linker_flags() { return m_linker_flags; }
 
     inline ExtensionOption* get_option_for_extension(const std::string& extension)
     {
@@ -72,5 +78,9 @@ private:
     Type m_type {};
     std::vector<std::shared_ptr<std::string>> m_depends {};
     std::vector<std::shared_ptr<std::string>> m_sources {};
-    std::unordered_map<std::string, ExtensionOption> m_extensions;
+    std::unordered_map<std::string, ExtensionOption> m_extensions {};
+
+    std::shared_ptr<std::string> m_archiver {};
+    std::shared_ptr<std::string> m_linker {};
+    std::vector<std::shared_ptr<std::string>> m_linker_flags{};
 };

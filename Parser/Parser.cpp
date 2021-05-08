@@ -163,17 +163,25 @@ void Parser::parse_build()
                     if (!linker) {
                         trigger_error_on_line(linker_or_flags.line(), "no linker is specified");
                     } else {
-                        context->m_link.set_linker(linker->content_ptr());
+                        context->m_build.set_linker(linker->content_ptr());
                     }
                 } else if (linker_or_flags.content() == "Flags") {
                     eat_sub_rule_hard();
                     parse_argument_list_of_rule(linker_or_flags, [this](const Token& flag) {
-                        context->m_link.add_flag(flag.content_ptr());
+                        context->m_build.add_linker_flag(flag.content_ptr());
                     });
                 } else {
                     trigger_error_on_line(linker_or_flags.line(), "unknown Link option \"" + linker_or_flags.content() + "\"");
                 }
             });
+        } else if (build_subfield.content() == "Archiver") {
+            eat_sub_rule_hard();
+            auto archiver = parse_single_argument_of_rule(build_subfield);
+            if (!archiver) {
+                trigger_error_on_line(build_subfield.line(), "no Archiver is specified");
+            } else {
+                context->m_build.set_archiver(archiver->content_ptr());
+            }
         } else {
             trigger_error_on_line(build_subfield.line(), "met unexpected Build subfield \"" + build_subfield.content() + "\"");
         }
