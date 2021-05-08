@@ -62,6 +62,8 @@ public:
     bool done() const { return m_done; }
     Operation operation() const { return m_operation; };
     std::filesystem::path directory() const { return m_path.parent_path(); }
+    std::string executable_path() const { return "BeegnBuild" / directory() / directory().filename(); }
+    std::string static_library_path() const { return ("BeegnBuild" / directory() / directory().filename()).string() + ".a"; }
 
 private:
     void validate_fields();

@@ -118,14 +118,30 @@ bool Context::build()
         std::this_thread::yield();
     }
 
+    // wait for the finalization of the dependent static libs
+    auto dependency_libs = std::vector<std::shared_ptr<std::string>>();
+    for (auto child : m_children) {
+        if (child->operation() == Context::Operation::Build) {
+            if (child->m_build.type() == BuildField::Type::Unknown) {
+                std::this_thread::yield();
+                continue;
+            }
+            if (child->m_build.type() == BuildField::Type::StaticLib) {
+                dependency_libs.push_back(std::make_shared<std::string>(child->static_library_path()));
+                child->m_thread->join();
+            }
+        }
+    }
+
     // finalize objects
     if (!objects.empty()) {
         if (m_build.type() == BuildField::Type::StaticLib) {
-            auto lib_name = std::make_shared<std::string>(("BeegnBuild" / directory() / directory().filename()).string() + ".a");
+            auto lib_name = std::make_shared<std::string>(static_library_path());
 
             auto archiver_flags = std::vector<std::shared_ptr<std::string>>();
-            archiver_flags.push_back( std::make_shared<std::string>("rcs"));
-            archiver_flags.push_back( lib_name);
+            archiver_flags.push_back(std::make_shared<std::string>("rcs"));
+            archiver_flags.push_back(lib_name);
+            std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(archiver_flags));
             std::copy(objects.begin(), objects.end(), std::back_inserter(archiver_flags));
 
             Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
@@ -137,10 +153,11 @@ bool Context::build()
                 .args = std::move(archiver_flags),
             }));
         } else {
-            // add objects and the output binary path to the linker flags
+            // add dependent libs, objects and the output binary path to the linker flags
+            std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(m_build.linker_flags()));
             std::copy(objects.begin(), objects.end(), std::back_inserter(m_build.linker_flags()));
             m_build.linker_flags().push_back(std::make_shared<std::string>("-o"));
-            auto link_exec = std::make_shared<std::string>("BeegnBuild" / directory() / directory().filename());
+            auto link_exec = std::make_shared<std::string>(executable_path());
             m_build.linker_flags().push_back(link_exec);
 
             Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
@@ -158,10 +175,18 @@ bool Context::build()
         }
     }
 
+    m_state = State::Built;
+
     // make sure, that all the children are built
     for (auto child : m_children) {
-        if (child->operation() == Context::Operation::Build && child->m_build.type() == BuildField::Type::Executable) {
-            child->m_thread->join();
+        if (child->operation() == Context::Operation::Build) {
+            if (child->m_build.type() == BuildField::Type::Unknown) {
+                std::this_thread::yield();
+                continue;
+            }
+            if (child->m_build.type() == BuildField::Type::Executable) {
+                child->m_thread->join();
+            }
         }
     }
 

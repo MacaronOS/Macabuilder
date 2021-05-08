@@ -2,6 +2,7 @@
 
 #include "../Lexer/Lexer.h"
 #include "../Lexer/Token.h"
+#include "../Logger.h"
 
 #include <functional>
 #include <iostream>
@@ -71,7 +72,7 @@ private:
 
     void trigger_error_on_line(size_t line, const std::string& error)
     {
-        std::cout << lexer.path() << ", line " << line << ": " << error << std::endl;
+        Log(Color::Red, lexer.path() + ", line", line, error);
         exit(1);
     }
 

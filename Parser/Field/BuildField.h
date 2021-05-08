@@ -8,6 +8,7 @@
 class BuildField {
 public:
     enum class Type {
+        Unknown,
         StaticLib,
         Executable,
     };
@@ -61,6 +62,7 @@ public:
     void add_linker_flag(const std::shared_ptr<std::string>& flag) { m_linker_flags.push_back(flag); }
 
     inline Type type() const { return m_type; }
+    inline const auto& depends() const { return m_depends; }
     inline const auto& sources() const { return m_sources; }
     auto& linker() { return m_linker; }
     auto& archiver() { return m_archiver; }
@@ -82,5 +84,5 @@ private:
 
     std::shared_ptr<std::string> m_archiver {};
     std::shared_ptr<std::string> m_linker {};
-    std::vector<std::shared_ptr<std::string>> m_linker_flags{};
+    std::vector<std::shared_ptr<std::string>> m_linker_flags {};
 };

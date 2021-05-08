@@ -27,15 +27,15 @@ void Executor::run()
 
                 cmd.executable_unit()->ctx->compile_counter--;
             } else {
-                auto finalizer = ((cmd.executable_unit()->op == Operation::Link) ? "Link" : "Archive");
-                auto finalized = ((cmd.executable_unit()->op == Operation::Link) ? "Linked" : "Archived");
+                auto finalizer = std::string(((cmd.executable_unit()->op == Operation::Link) ? "Link" : "Archive"));
+                auto finalized = std::string(((cmd.executable_unit()->op == Operation::Link) ? "Linked" : "Archived"));
                 if (cmd.exit_status()) {
                     Log(Color::Red, finalizer, "error:", *cmd.executable_unit()->binary);
                 } else {
                     if (!cmd.std_out().empty() || !cmd.std_err().empty()) {
                         Log(Color::Yellow, finalized, "with warnings:", *cmd.executable_unit()->binary);
                     } else {
-                        Log(Color::Green, finalized, *cmd.executable_unit()->binary);
+                        Log(Color::Green, finalized + ":", *cmd.executable_unit()->binary);
                     }
                 }
 
@@ -92,9 +92,12 @@ void Executor::run()
     });
 }
 
-void Executor::enqueue(const std::shared_ptr<ExecutableUnit>& u3)
+void Executor::enqueue(const std::shared_ptr<ExecutableUnit>& unit)
 {
-    m_units.enqueue(u3);
+    if (unit->op == Operation::Compile) {
+        unit->ctx->compile_counter++;
+    }
+    m_units.enqueue(unit);
 }
 
 void Executor::await()
@@ -104,9 +107,6 @@ void Executor::await()
 
 void Executor::process_unit(const std::shared_ptr<ExecutableUnit>& unit, Command& cmd)
 {
-    if (unit->op == Operation::Compile) {
-        unit->ctx->compile_counter++;
-    }
     cmd.set_executable_unit(unit);
     cmd.execute(*unit->callee, unit->args);
 }

@@ -113,6 +113,12 @@ void Parser::parse_build()
             parse_argument_list([&](const Token& dependency) {
                 context->m_build.add_dependency(dependency.content_ptr());
             });
+            // as soon as depends list is parsed, we are ready to process referenced files in different threads
+            for (auto& dependency : context->m_build.depends()) {
+                if (!context->run_as_childs(*dependency, Context::Operation::Build)) {
+                    trigger_error_on_line(build_subfield.line(), "referenced dependency \"" + *dependency + "\" does not exist");
+                }
+            }
         } else if (build_subfield.content() == "Src") {
             eat_sub_rule_hard();
             parse_argument_list([&](const Token& source) {
