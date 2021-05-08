@@ -59,11 +59,17 @@ public:
     }
 
 public:
-    bool done() const { return m_done; }
-    Operation operation() const { return m_operation; };
-    std::filesystem::path directory() const { return m_path.parent_path(); }
-    std::string executable_path() const { return "BeegnBuild" / directory() / directory().filename(); }
-    std::string static_library_path() const { return ("BeegnBuild" / directory() / directory().filename()).string() + ".a"; }
+    inline bool done() const { return m_done; }
+    inline Operation operation() const { return m_operation; };
+    inline std::filesystem::path directory() const { return m_path.parent_path(); }
+    inline std::string executable_path() const {
+        auto filename = directory();
+        if (filename.empty()) {
+            filename = m_path.stem();
+        }
+        return "BeegnBuild" / directory() / filename;
+    }
+    inline std::string static_library_path() const { return ("BeegnBuild" / directory() / directory().filename()).string() + ".a"; }
 
 private:
     void validate_fields();

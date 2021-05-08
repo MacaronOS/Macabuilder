@@ -12,6 +12,10 @@ class Finder {
     static constexpr auto BeegnExtensionPattern = "*.bgn";
 
 public:
+    static inline auto FindRootBeegnFiles()
+    {
+        return glob(BeegnExtensionPattern);
+    }
     static inline auto FindBeegnFiles(const std::string& directory, const std::string& pattern = "")
     {
         auto path = std::filesystem::path(directory) / std::filesystem::path(pattern) / BeegnExtensionPattern;
