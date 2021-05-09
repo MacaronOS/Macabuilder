@@ -16,6 +16,11 @@ public:
         m_commands[cmd].push_back(append);
     }
 
+    inline auto& command_list(const std::string& cmd)
+    {
+        return m_commands[cmd];
+    }
+
     auto& commands() const { return m_commands; }
 
 private:

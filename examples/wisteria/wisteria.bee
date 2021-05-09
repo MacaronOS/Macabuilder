@@ -14,7 +14,7 @@ Commands:
         sudo umount mountpoint,
 
     Run:
-        [QEMU] -kernel [TARGET_EXEC]
+        ./BeelderBuild/wisteria
 
 Build:
     Type: Executable
@@ -38,4 +38,4 @@ Build:
         Linker: g++
 
 Default:
-    Build, Install, Run
+    Build, Run

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Logger.h"
 #include "../utils/ThreadQueue.h"
 #include "Command.h"
 #include "ExecutableUnit.h"
@@ -25,6 +26,13 @@ public:
     inline void stop() { m_running = false; }
     void await();
     void enqueue(const std::shared_ptr<ExecutableUnit>& u3);
+
+    // Blocking command
+    static inline void blocking_cmd(const std::string& cmd)
+    {
+        Log(Color::Blue, "Command:", cmd);
+        system(cmd.c_str());
+    }
 
 private:
     Executor() = default;

@@ -62,7 +62,8 @@ public:
     inline bool done() const { return m_done; }
     inline Operation operation() const { return m_operation; };
     inline std::filesystem::path directory() const { return m_path.parent_path(); }
-    inline std::string executable_path() const {
+    inline std::string executable_path() const
+    {
         auto filename = directory();
         if (filename.empty()) {
             filename = m_path.stem();
@@ -81,6 +82,12 @@ private:
     {
         Log(Color::Red, m_path.string() + ":", error);
         exit(1);
+    }
+
+    static inline std::shared_ptr<std::string> shell()
+    {
+        static auto shell = std::make_shared<std::string>("/bin/bash");
+        return shell;
     }
 
 private:

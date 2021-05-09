@@ -11,6 +11,8 @@ public:
         m_default_sequence.push_back(command);
     }
 
+    auto& sequence() { return m_default_sequence; }
+
 private:
     std::vector<std::shared_ptr<std::string>> m_default_sequence {};
 };

@@ -22,12 +22,26 @@ void Context::run()
         parser.run();
         validate_fields();
         merge_children();
-        build();
 
-        // wait for children
-        for (auto child : m_children) {
-            while (!child->done()) {
-                std::this_thread::yield();
+        if (m_default.sequence().empty()) {
+            build();
+        } else {
+            for (auto& cmd : m_default.sequence()) {
+                // Build is a special command word that's reserved for unit building
+                if (*cmd == "Build") {
+                    build();
+                    continue;
+                }
+                for (auto& command : m_commands.command_list(*cmd)) {
+                    Executor::blocking_cmd(*command);
+                }
+            }
+
+            // wait for children
+            for (auto child : m_children) {
+                while (!child->done()) {
+                    std::this_thread::yield();
+                }
             }
         }
 
