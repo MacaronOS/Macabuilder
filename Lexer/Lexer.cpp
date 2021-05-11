@@ -37,7 +37,12 @@ void Lexer::run()
         std::string cur_word {};
 
         while (char c = eat()) {
+            if (c == '\\') {
+                cur_word.push_back(eat());
+                continue;
+            }
             auto token = Token::TokenFromChar(c, nesting, m_token_line);
+
             if (token.type() == Token::Type::Default) {
                 cur_word.push_back(c);
             } else {
@@ -52,7 +57,6 @@ void Lexer::run()
             m_tokens.emplace_back(cur_word, Token::Type::Default, nesting, m_token_line);
         }
     }
-
 }
 int Lexer::calc_nesting_for_cur_line()
 {
