@@ -1,0 +1,12 @@
+Build:
+    Type: Executable
+
+    Src: **/*.cpp, Context.cpp, main.cpp
+
+    Extensions:
+        cpp:
+            Compiler: clang++
+            Flags: -std=c++2a, -O3
+
+    Link:
+        Linker: clang++
