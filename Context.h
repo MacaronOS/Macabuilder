@@ -71,6 +71,7 @@ public:
         return "BeelderBuild" / directory() / filename;
     }
     inline std::string static_library_path() const { return executable_path() + ".a"; }
+    inline bool root() const { return directory().empty(); }
 
 private:
     void validate_fields();

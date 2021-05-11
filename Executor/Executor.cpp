@@ -17,6 +17,7 @@ void Executor::run()
             if (cmd.executable_unit()->op == Operation::Compile) {
                 if (cmd.exit_status()) {
                     Log(Color::Red, "Build error:", cmd.executable_unit()->src);
+                    cmd.executable_unit()->ctx->m_state = Context::State::BuildError;
                 } else {
                     if (!cmd.std_out().empty() || !cmd.std_err().empty()) {
                         Log(Color::Yellow, "Built with warnings:", cmd.executable_unit()->src);
@@ -31,6 +32,7 @@ void Executor::run()
                 auto finalized = std::string(((cmd.executable_unit()->op == Operation::Link) ? "Linked" : "Archived"));
                 if (cmd.exit_status()) {
                     Log(Color::Red, finalizer, "error:", *cmd.executable_unit()->binary);
+                    cmd.executable_unit()->ctx->m_state = Context::State::BuildError;
                 } else {
                     if (!cmd.std_out().empty() || !cmd.std_err().empty()) {
                         Log(Color::Yellow, finalized, "with warnings:", *cmd.executable_unit()->binary);

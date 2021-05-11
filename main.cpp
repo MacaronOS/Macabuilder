@@ -25,8 +25,5 @@ int main()
         std::this_thread::yield();
     }
 
-    Executor::the().stop();
-    Executor::the().await();
-
     return 0;
 }

@@ -148,6 +148,9 @@ bool Context::build()
     }
 
     // finalize objects
+    if (m_state == State::BuildError) {
+        exit(1);
+    }
     if (!objects.empty()) {
         if (m_build.type() == BuildField::Type::StaticLib) {
             auto lib_name = std::make_shared<std::string>(static_library_path());
@@ -189,6 +192,10 @@ bool Context::build()
         }
     }
 
+    if (m_state == State::BuildError) {
+        exit(1);
+    }
+
     m_state = State::Built;
 
     // make sure, that all the children are built
@@ -202,6 +209,11 @@ bool Context::build()
                 child->m_thread->join();
             }
         }
+    }
+
+    if (root()) {
+        Executor::the().stop();
+        Executor::the().await();
     }
 
     return false;
