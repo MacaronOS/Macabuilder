@@ -1,3 +1,4 @@
+#include "Config.h"
 #include "Context.h"
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
@@ -5,8 +6,11 @@
 
 #include <thread>
 
-int main()
+int main(int argc, char** argv)
 {
+    Config::the().process_arguments(argc, argv);
+    auto& a = Config::the().arguments();
+
     auto beelder_files = Finder::FindRootBeelderFiles();
 
     if (beelder_files.size() > 1) {
@@ -14,9 +18,12 @@ int main()
         exit(1);
     }
 
-    auto root = beelder_files[0];
+    if (beelder_files.empty()) {
+        Log(Color::Red, "no root files are presented");
+        exit(1);
+    }
 
-    auto context = Context(root, Context::Operation::Build);
+    auto context = Context(beelder_files.front(), Context::Operation::Build, true);
     context.run();
 
     Executor::the().run();

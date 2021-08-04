@@ -39,7 +39,7 @@ public:
     };
 
 public:
-    Context(std::filesystem::path path, Operation operation);
+    Context(std::filesystem::path path, Operation operation, bool root_ctx = false);
 
 public:
     void run();
@@ -70,13 +70,18 @@ public:
         }
         return "BeelderBuild" / directory() / filename;
     }
+    inline bool root_ctx() const { return m_root_ctx; }
     inline std::string static_library_path() const { return executable_path() + ".a"; }
+    inline std::string name() const { return std::filesystem::path(executable_path()).filename(); }
     inline bool root() const { return directory().empty(); }
+    inline const auto& children() const { return m_children; }
+    inline const auto& build_field() const { return m_build; }
 
 private:
     void validate_fields();
     bool merge_children();
     bool build();
+    void process_by_mode();
 
 private:
     inline void trigger_error(const std::string& error)
@@ -92,6 +97,7 @@ private:
     }
 
 private:
+    bool m_root_ctx {};
     std::thread* m_thread {};
     std::filesystem::path m_path;
     Operation m_operation;

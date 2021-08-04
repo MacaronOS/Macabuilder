@@ -67,6 +67,7 @@ public:
     auto& linker() { return m_linker; }
     auto& archiver() { return m_archiver; }
     auto& linker_flags() { return m_linker_flags; }
+    const auto& extensions() const { return m_extensions; }
 
     inline ExtensionOption* get_option_for_extension(const std::string& extension)
     {

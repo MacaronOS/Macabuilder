@@ -7,6 +7,7 @@ enum class Color {
     Green = 32,
     Yellow = 33,
     Blue = 34,
+    Magenta = 35,
 };
 
 template <class... Types>

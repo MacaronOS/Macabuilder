@@ -1,17 +1,20 @@
 #include "Context.h"
 
+#include "Config.h"
 #include "Executor/ExecutableUnit.h"
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
 #include "Parser/Parser.h"
+#include "Translator/Translator.h"
 
 #include <numeric>
 #include <thread>
 #include <utility>
 
-Context::Context(std::filesystem::path path, Context::Operation operation)
+Context::Context(std::filesystem::path path, Context::Operation operation, bool root_ctx)
     : m_path(std::move(path))
     , m_operation(operation)
+    , m_root_ctx(root_ctx)
 {
     parser = Parser(m_path, this);
 }
@@ -22,28 +25,7 @@ void Context::run()
         parser.run();
         validate_fields();
         merge_children();
-
-        if (m_default.sequence().empty()) {
-            build();
-        } else {
-            for (auto& cmd : m_default.sequence()) {
-                // Build is a special command word that's reserved for unit building
-                if (*cmd == "Build") {
-                    build();
-                    continue;
-                }
-                for (auto& command : m_commands.command_list(*cmd)) {
-                    Executor::blocking_cmd(*command);
-                }
-            }
-
-            // wait for children
-            for (auto child : m_children) {
-                while (!child->done()) {
-                    std::this_thread::yield();
-                }
-            }
-        }
+        process_by_mode();
 
         m_done = true;
     });
@@ -86,6 +68,47 @@ bool Context::merge_children()
 
     m_state = State::Parsed;
     return true;
+}
+
+void Context::process_by_mode()
+{
+    if (m_operation != Operation::Build) {
+        return;
+    }
+    auto mode = Config::the().mode();
+    const auto& arguments = Config::the().arguments();
+
+    auto process_command = [&](const std::string& cmd) {
+        // Build is a special command word that's reserved for unit building
+        if (cmd == "Build") {
+            build();
+        } else {
+            for (auto& command : m_commands.command_list(cmd)) {
+                Executor::blocking_cmd(*command);
+            }
+        }
+    };
+
+    if (mode == Config::Mode::Default) {
+        if (m_default.sequence().empty()) {
+            process_command("Build");
+        }
+        for (auto& cmd : m_default.sequence()) {
+            process_command(*cmd);
+        }
+        return;
+    }
+
+    if (mode == Config::Mode::CommandList) {
+        for (auto& cmd : arguments) {
+            process_command(cmd);
+        }
+        return;
+    }
+
+    if (mode == Config::Mode::Generate) {
+        Translator::generate_cmake(this);
+    }
 }
 
 bool Context::build()
