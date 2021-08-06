@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Lexer/Lexer.h"
-#include "../Lexer/Token.h"
+#include "Lexer/Lexer.h"
+#include "Lexer/Token.h"
 #include "../utils/Logger.h"
 
 #include <functional>

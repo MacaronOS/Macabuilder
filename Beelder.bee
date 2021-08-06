@@ -1,7 +1,7 @@
 Build:
     Type: Executable
 
-    Src: **/*.cpp, *.cpp
+    Src: Sources/*.cpp, Sources/*/*.cpp, Sources/*/*/*.cpp
 
     Extensions:
         cpp:

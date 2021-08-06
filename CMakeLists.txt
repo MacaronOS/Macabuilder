@@ -5,9 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_CXX_FLAGS "-O3")
 
-add_executable(Beelder main.cpp Lexer/Lexer.cpp Lexer/Lexer.h Lexer/Token.h Parser/Parser.cpp Parser/Parser.h Context.cpp Context.h Parser/Field/IncludeField.h Parser/Field/DefinesField.h Parser/Field/CommandsField.h Parser/Field/BuildField.h Parser/Field/DefaultField.h Finder/Finder.h Executor/Executor.cpp Executor/Executor.h Executor/Command.cpp Executor/Command.h utils/Logger.h utils/Utils.h utils/Utils.cpp utils/Utils.h Executor/ExecutableUnit.h Finder/Finder.cpp utils/ThreadQueue.h utils/Lock.h examples/wisteria/wisterialib/library.cpp Config.cpp Config.h Translator/Translator.cpp Translator/Translator.h)
+add_executable(Beelder Sources/main.cpp Sources/Parser/Lexer/Lexer.cpp Sources/Parser/Lexer/Lexer.h Sources/Parser/Lexer/Token.h Sources/Parser/Parser.cpp Sources/Parser/Parser.h Sources/Context.cpp Sources/Context.h Sources/Parser/Field/IncludeField.h Sources/Parser/Field/DefinesField.h Sources/Parser/Field/CommandsField.h Sources/Parser/Field/BuildField.h Sources/Parser/Field/DefaultField.h Sources/Finder/Finder.h Sources/Executor/Executor.cpp Sources/Executor/Executor.h Sources/Executor/Command.cpp Sources/Executor/Command.h Sources/Utils/Logger.h Sources/Utils/Utils.h Sources/Utils/Utils.cpp Sources/Utils/Utils.h Sources/Executor/ExecutableUnit.h Sources/Finder/Finder.cpp Sources/Utils/ThreadQueue.h Sources/Utils/Lock.h Examples/wisteria/wisterialib/library.cpp Sources/Config.cpp Sources/Config.h Sources/Translator/Translator.cpp Sources/Translator/Translator.h)
 
 file(
-        COPY ${CMAKE_CURRENT_BASE_DIR}examples/wisteria/
+        COPY ${CMAKE_CURRENT_BASE_DIR}Examples/wisteria/
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )

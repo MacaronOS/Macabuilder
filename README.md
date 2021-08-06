@@ -1,7 +1,7 @@
 # Beelder
 Simple and yet efficient build system primarily oriented on c++ with good attention on low level details and configurability.
 
-<img src="https://github.com/Plunkerusr/Beelder/blob/main/Assets/wisteria-build-test.gif" width="500" alt="WisteriaOS build demo">
+<img src="https://github.com/Plunkerusr/Beelder/blob/main/assets/wisteria-build-test.gif" width="500" alt="WisteriaOS build demo">
 
 ## What's the point?
 If you want to build a low level project (Operating system is a perfect example)
