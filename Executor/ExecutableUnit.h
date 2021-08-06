@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 enum class Operation {
     Compile,
@@ -19,4 +20,5 @@ struct ExecutableUnit {
     std::string src {};
     std::shared_ptr<std::string> binary;
     std::vector<std::shared_ptr<std::string>> args {};
+    std::filesystem::path cwd {};
 };

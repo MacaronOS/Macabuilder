@@ -7,8 +7,9 @@
 
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
-#include "Logger.h"
 #include "Parser/Parser.h"
+#include "utils/Lock.h"
+#include "utils/Logger.h"
 
 #include "Parser/Field/BuildField.h"
 #include "Parser/Field/CommandsField.h"
@@ -16,9 +17,12 @@
 #include "Parser/Field/DefinesField.h"
 #include "Parser/Field/IncludeField.h"
 
+#include <cstdlib>
+#include <filesystem>
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 
 class Context {
     friend class Parser;
@@ -41,37 +45,41 @@ public:
 public:
     Context(std::filesystem::path path, Operation operation, bool root_ctx = false);
 
-public:
     void run();
+    bool run_as_childs(const std::string& pattern, Operation operation);
 
-    bool run_as_childs(const std::string& pattern, Operation operation)
-    {
-        auto beelder_files = Finder::FindBeelderFiles(directory(), pattern);
-        if (beelder_files.empty()) {
-            return false;
-        }
-        for (auto& path : beelder_files) {
-            auto child = new Context(path, operation);
-            m_children.push_back(child);
-            child->run();
-        }
-        return true;
-    }
-
-public:
     inline bool done() const { return m_done; }
     inline Operation operation() const { return m_operation; };
     inline std::filesystem::path directory() const { return m_path.parent_path(); }
+    inline std::filesystem::path cwd() const
+    {
+        auto cwd = directory();
+        if (cwd.empty()) {
+            return ".";
+        }
+        return cwd;
+    }
+    inline std::string beelder_path() const
+    {
+        auto dir = directory();
+        if (dir.empty()) {
+            return "BeelderBuild";
+        }
+        return dir / "BeelderBuild";
+    }
+    inline std::string static_library_path() const
+    {
+        size_t lastindex = m_path.string().find_last_of('.');
+        std::string libname = m_path.string().substr(0, lastindex);
+        return (beelder_path() / std::filesystem::proximate(libname, directory())).string() + ".a";
+    }
     inline std::string executable_path() const
     {
-        auto filename = directory();
-        if (filename.empty()) {
-            filename = m_path.stem();
-        }
-        return "BeelderBuild" / directory() / filename;
+        size_t lastindex = m_path.string().find_last_of('.');
+        std::string libname = m_path.string().substr(0, lastindex);
+        return (beelder_path() / std::filesystem::proximate(libname, directory())).string();
     }
     inline bool root_ctx() const { return m_root_ctx; }
-    inline std::string static_library_path() const { return executable_path() + ".a"; }
     inline std::string name() const { return std::filesystem::path(executable_path()).filename(); }
     inline bool root() const { return directory().empty(); }
     inline const auto& children() const { return m_children; }
@@ -83,24 +91,31 @@ private:
     bool build();
     void process_by_mode();
 
-private:
     inline void trigger_error(const std::string& error)
     {
         Log(Color::Red, m_path.string() + ":", error);
         exit(1);
     }
 
-    static inline std::shared_ptr<std::string> shell()
+    static inline Context* get_context_by_path(const std::filesystem::path& path)
     {
-        static auto shell = std::make_shared<std::string>("/bin/bash");
-        return shell;
+        static char resolved_path[PATH_MAX];
+        realpath(path.c_str(), resolved_path);
+        return s_processing_contexts[resolved_path];
+    }
+
+    static inline void register_context(const std::filesystem::path& path, Context* context)
+    {
+        static char resolved_path[PATH_MAX];
+        realpath(path.c_str(), resolved_path);
+        s_processing_contexts[resolved_path] = context;
     }
 
 private:
-    bool m_root_ctx {};
-    std::thread* m_thread {};
     std::filesystem::path m_path;
     Operation m_operation;
+    bool m_root_ctx {};
+    std::thread* m_thread {};
     State m_state { State::NotStarted };
     bool m_done {};
 
@@ -121,4 +136,7 @@ private:
 
     // if included context contains a build field it's going to be built separately
     std::vector<BuildField> m_children_builds {};
+
+    static SpinLock m_lock;
+    static std::unordered_map<std::string, Context*> s_processing_contexts;
 };

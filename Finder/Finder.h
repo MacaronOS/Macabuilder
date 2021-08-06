@@ -41,9 +41,14 @@ public:
     static inline void CreateDirectory(const std::string& directory)
     {
         auto dirs = Utils::Split(directory, "/");
-        std::filesystem::path cur_path = dirs[0];
+        int begin = 0;
+        if (!directory.empty() && directory[0] == '/') {
+            begin++;
+        }
 
-        for (size_t at = 1; at < dirs.size(); at++) {
+        std::filesystem::path cur_path = dirs[begin];
+
+        for (size_t at = begin + 1; at < dirs.size(); at++) {
             if (!std::filesystem::exists(cur_path)) {
                 std::filesystem::create_directory(cur_path);
             }

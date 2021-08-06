@@ -1,6 +1,6 @@
 #include "Executor.h"
 #include "../Context.h"
-#include "../Logger.h"
+#include "../utils/Logger.h"
 #include "ExecutableUnit.h"
 
 #include <iostream>
@@ -110,5 +110,5 @@ void Executor::await()
 void Executor::process_unit(const std::shared_ptr<ExecutableUnit>& unit, Command& cmd)
 {
     cmd.set_executable_unit(unit);
-    cmd.execute(*unit->callee, unit->args);
+    cmd.execute(*unit->callee, unit->args, unit->cwd);
 }

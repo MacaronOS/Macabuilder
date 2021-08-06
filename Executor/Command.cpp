@@ -2,6 +2,7 @@
 
 #include <array>
 #include <fcntl.h>
+#include <filesystem>
 #include <iostream>
 #include <unistd.h>
 #include <vector>
@@ -29,7 +30,7 @@ void Command::open_descriptors()
     }
 }
 
-void Command::execute(const std::string& compiler, const std::vector<std::shared_ptr<std::string>>& args)
+void Command::execute(const std::string& compiler, const std::vector<std::shared_ptr<std::string>>& args, const std::filesystem::path& cwd)
 {
     std::vector<char*> cmd_args {};
     cmd_args.push_back(const_cast<char*>(compiler.data()));
@@ -58,6 +59,7 @@ void Command::execute(const std::string& compiler, const std::vector<std::shared
         if (dup2(m_err_fds[write_ptr], STDERR_FILENO) < 0) {
             exit(1);
         }
+        std::filesystem::current_path(cwd);
         execvp(cmd_args[0], cmd_args.data());
     }
 }

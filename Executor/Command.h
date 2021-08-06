@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <unistd.h>
+#include <filesystem>
 
 class Command {
 public:
@@ -12,7 +13,7 @@ public:
     void open_descriptors();
 
 public:
-    void execute(const std::string& compiler, const std::vector<std::shared_ptr<std::string>>& args);
+    void execute(const std::string& compiler, const std::vector<std::shared_ptr<std::string>>& args, const std::filesystem::path& cwd);
     bool done();
 
 public:

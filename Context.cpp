@@ -11,6 +11,9 @@
 #include <thread>
 #include <utility>
 
+std::unordered_map<std::string, Context*> Context::s_processing_contexts = {};
+SpinLock Context::m_lock = {};
+
 Context::Context(std::filesystem::path path, Context::Operation operation, bool root_ctx)
     : m_path(std::move(path))
     , m_operation(operation)
@@ -31,6 +34,27 @@ void Context::run()
     });
 }
 
+bool Context::run_as_childs(const std::string& pattern, Operation operation)
+{
+    auto beelder_files = Finder::FindBeelderFiles(directory(), pattern);
+    if (beelder_files.empty()) {
+        return false;
+    }
+    for (auto& path : beelder_files) {
+        auto _ = ScopedLocker(m_lock);
+        auto context = get_context_by_path(path);
+        if (context == nullptr) {
+            auto child = new Context(path, operation);
+            m_children.push_back(child);
+            register_context(path, child);
+            child->run();
+        } else {
+            m_children.push_back(context);
+        }
+    }
+    return true;
+}
+
 void Context::validate_fields()
 {
     if (m_build.type() == BuildField::Type::Executable) {
@@ -48,7 +72,9 @@ bool Context::merge_children()
 {
     for (auto child : m_children) {
         if (child->operation() == Context::Operation::Parse) {
-            child->m_thread->join();
+            while (child->m_state != Context::State::Parsed) {
+                std::this_thread::yield();
+            }
         }
     }
 
@@ -117,25 +143,30 @@ bool Context::build()
 
     for (auto& source : m_build.sources()) {
         auto files = Finder::FindFiles(directory(), *source);
+
         for (auto& file : files) {
             auto extension = file.string().substr(file.string().find_last_of('.') + 1);
             auto option = m_build.get_option_for_extension(extension);
 
             if (!option) {
-                // TODO: trigger some error
-                continue;
+                trigger_error("no option for extension \"" + extension + "\"");
             }
 
-            Finder::CreateDirectory("BeelderBuild" / Finder::GetFolder(file));
+            auto object = (beelder_path() / std::filesystem::proximate(file, directory())).string() + ".o";
+            Finder::CreateDirectory(std::filesystem::path(object).parent_path());
 
-            auto object = std::make_shared<std::string>(("BeelderBuild" / file).string() + ".o");
+            auto relative_source = std::filesystem::proximate(file, directory());
+            auto relative_object = std::filesystem::proximate(object, directory());
 
             auto flags = option->flags;
 
-            flags.push_back(std::make_shared<std::string>("-c"));
-            flags.push_back(std::make_shared<std::string>(file));
+            // TODO: fix this!
+            if (*option->compiler != "nasm") {
+                flags.push_back(std::make_shared<std::string>("-c"));
+            }
+            flags.push_back(std::make_shared<std::string>(relative_source));
             flags.push_back(std::make_shared<std::string>("-o"));
-            flags.push_back(object);
+            flags.push_back(std::make_shared<std::string>(relative_object));
 
             Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
                 .op = ::Operation::Compile,
@@ -144,9 +175,10 @@ bool Context::build()
                 .src = std::move(file),
                 .binary = nullptr,
                 .args = std::move(flags),
+                .cwd = cwd(),
             }));
 
-            objects.push_back(object);
+            objects.push_back(std::make_shared<std::string>(relative_object));
         }
     }
 
@@ -164,8 +196,11 @@ bool Context::build()
                 continue;
             }
             if (child->m_build.type() == BuildField::Type::StaticLib) {
-                dependency_libs.push_back(std::make_shared<std::string>(child->static_library_path()));
-                child->m_thread->join();
+                auto dependency_lib_relative = std::filesystem::proximate(child->static_library_path(), directory());
+                dependency_libs.push_back(std::make_shared<std::string>(dependency_lib_relative));
+                while (child->m_state != Context::State::Built) {
+                    std::this_thread::yield();
+                }
             }
         }
     }
@@ -176,13 +211,18 @@ bool Context::build()
     }
     if (!objects.empty()) {
         if (m_build.type() == BuildField::Type::StaticLib) {
-            auto lib_name = std::make_shared<std::string>(static_library_path());
+            size_t lastindex = m_path.string().find_last_of('.');
+            std::string libname = m_path.string().substr(0, lastindex);
+
+            auto lib = (beelder_path() / std::filesystem::proximate(libname, directory())).string() + ".a";
+            auto lib_relative = std::filesystem::proximate(lib, directory());
+            auto lib_name = std::make_shared<std::string>(lib_relative);
 
             auto archiver_flags = std::vector<std::shared_ptr<std::string>>();
             archiver_flags.push_back(std::make_shared<std::string>("rcs"));
             archiver_flags.push_back(lib_name);
-            std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(archiver_flags));
             std::copy(objects.begin(), objects.end(), std::back_inserter(archiver_flags));
+            std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(archiver_flags));
 
             Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
                 .op = ::Operation::Archive,
@@ -191,13 +231,17 @@ bool Context::build()
                 .src = {},
                 .binary = lib_name,
                 .args = std::move(archiver_flags),
-            }));
+                .cwd = cwd() }));
         } else {
-            // add dependent libs, objects and the output binary path to the linker flags
+//            m_build.linker_flags().push_back(std::make_shared<std::string>("-Wl,--start-group"));
             std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(m_build.linker_flags()));
             std::copy(objects.begin(), objects.end(), std::back_inserter(m_build.linker_flags()));
+            std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(m_build.linker_flags()));
+            std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(m_build.linker_flags()));
+//            m_build.linker_flags().push_back(std::make_shared<std::string>("-Wl,--end-group"));
+
             m_build.linker_flags().push_back(std::make_shared<std::string>("-o"));
-            auto link_exec = std::make_shared<std::string>(executable_path());
+            auto link_exec = std::make_shared<std::string>(std::filesystem::proximate(executable_path(), directory()));
             m_build.linker_flags().push_back(link_exec);
 
             Executor::the().enqueue(std::make_shared<ExecutableUnit>(ExecutableUnit {
@@ -207,7 +251,7 @@ bool Context::build()
                 .src = {},
                 .binary = link_exec,
                 .args = std::move(m_build.linker_flags()),
-            }));
+                .cwd = cwd() }));
         }
 
         while (!done_finalizer) {
@@ -229,7 +273,9 @@ bool Context::build()
                 continue;
             }
             if (child->m_build.type() == BuildField::Type::Executable) {
-                child->m_thread->join();
+                while (child->m_state != Context::State::Built) {
+                    std::this_thread::yield();
+                }
             }
         }
     }
