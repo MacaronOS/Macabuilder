@@ -8,8 +8,8 @@
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
 #include "Parser/Parser.h"
-#include "utils/Lock.h"
-#include "utils/Logger.h"
+#include "Utils/Lock.h"
+#include "Utils/Logger.h"
 
 #include "Parser/Field/BuildField.h"
 #include "Parser/Field/CommandsField.h"
@@ -23,6 +23,8 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+
+constexpr size_t path_max = 4096;
 
 class Context {
     friend class Parser;
@@ -99,14 +101,14 @@ private:
 
     static inline Context* get_context_by_path(const std::filesystem::path& path)
     {
-        static char resolved_path[PATH_MAX];
+        static char resolved_path[path_max];
         realpath(path.c_str(), resolved_path);
         return s_processing_contexts[resolved_path];
     }
 
     static inline void register_context(const std::filesystem::path& path, Context* context)
     {
-        static char resolved_path[PATH_MAX];
+        static char resolved_path[path_max];
         realpath(path.c_str(), resolved_path);
         s_processing_contexts[resolved_path] = context;
     }

@@ -2,14 +2,13 @@
 #include "Context.h"
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
-#include "utils/Logger.h"
+#include "Utils/Logger.h"
 
 #include <thread>
 
 int main(int argc, char** argv)
 {
     Config::the().process_arguments(argc, argv);
-    auto& a = Config::the().arguments();
 
     auto beelder_files = Finder::FindRootBeelderFiles();
 

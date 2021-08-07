@@ -2,7 +2,7 @@
 
 #include "Lexer/Lexer.h"
 #include "Lexer/Token.h"
-#include "../utils/Logger.h"
+#include "../Utils/Logger.h"
 
 #include <functional>
 #include <iostream>

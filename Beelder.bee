@@ -6,7 +6,7 @@ Build:
     Extensions:
         cpp:
             Compiler: clang++
-            Flags: -std=c++2a, -O3
+            Flags: -std=c++2a, -O3, -lpthread
 
     Link:
         Linker: clang++

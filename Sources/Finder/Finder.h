@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../utils/Utils.h"
+#include "../Utils/Utils.h"
+#include "Glob.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -8,24 +9,25 @@
 #include <string>
 #include <vector>
 
+
 class Finder {
     static constexpr auto BeelderExtensionPattern = "*.bee";
 
 public:
     static inline auto FindRootBeelderFiles()
     {
-        return glob(BeelderExtensionPattern);
+        return Glob(BeelderExtensionPattern).result();
     }
     static inline auto FindBeelderFiles(const std::string& directory, const std::string& pattern = "")
     {
         auto path = std::filesystem::path(directory) / std::filesystem::path(pattern) / BeelderExtensionPattern;
-        return glob(path);
+        return Glob(path).result();
     }
 
     static inline auto FindFiles(const std::string& directory, const std::string& pattern)
     {
         auto path = std::filesystem::path(directory) / std::filesystem::path(pattern);
-        return glob(path);
+        return Glob(path).result();
     }
 
     static inline auto GetExtension(const std::string& filename)
@@ -60,6 +62,4 @@ public:
             std::filesystem::create_directory(cur_path);
         }
     }
-
-    static std::vector<std::filesystem::path> glob(const std::string& pattern);
 };
