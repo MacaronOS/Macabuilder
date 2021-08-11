@@ -1,5 +1,5 @@
 # Beelder
-Simple and yet efficient build system primarily oriented on c++ with good attention on low level details and configurability.
+Simple and yet efficient build system primarily oriented on C and C++ mixed with Assembly with good attention on low level details and configurability.
 
 <img src="https://github.com/Plunkerusr/Beelder/blob/main/Assets/wisteria-build-test.gif" width="500" alt="WisteriaOS build demo">
 
@@ -31,6 +31,24 @@ Attempt | #1 | #2 | #3 | #4 | #5
 --- | --- | --- | --- |--- |--- |
 CMake (seconds) | 4,271 | 4,557 | 4,324 | 4,297 | 4,144
 Beelder (seconds) | **3,552** | **3,907** | **3,586** | **3,624** | **3,642**
+
+## Features / usage guide
+- Use "Build" field to specify either an executable or static library mode
+    - Use "Src" subfield to select all sources for your project
+    - Use "Extensions" subfield to filter sources by extension and setup and then specify compiler and flags for those extension
+    - If you are building an executable use "Link" subfield to specify linker and linker flags
+    - If you are building a static library use "Archive" subfield to specify an archiver
+    - Use "Depends" subfield to list all dependencies for the current build target
+        - If a static library is listed, it will be linked into the target
+        - If an executable is listed, it will be built before the current target
+    
+
+- Use "Commands" field to specify shell commands
+  - There's at least one command "Build" that's declared implicitly. It's used to launch build field.
+  - You can run them by passing them as arguments when launching Beelder binary
+    
+- Use "Default" field to specify a default sequence of commands
+  - the default commands sequence is launched when there are no arguments passed to the Beelder binary
 
 ## If you want to try and build something
 Check out my other project [WisteriaOS](https://github.com/Plunkerusr/WisteriaOS).
