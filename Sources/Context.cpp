@@ -139,7 +139,7 @@ void Context::process_by_mode()
 
 bool Context::build()
 {
-    std::vector<std::shared_ptr<std::string>> objects;
+    std::vector<std::shared_ptr<std::string>> objects {};
 
     for (auto& source : m_build.sources()) {
         auto files = Finder::FindFiles(directory(), *source);
@@ -191,9 +191,8 @@ bool Context::build()
     auto dependency_libs = std::vector<std::shared_ptr<std::string>>();
     for (auto child : m_children) {
         if (child->operation() == Context::Operation::Build) {
-            if (child->m_build.type() == BuildField::Type::Unknown) {
+            while (child->m_build.type() == BuildField::Type::Unknown) {
                 std::this_thread::yield();
-                continue;
             }
             if (child->m_build.type() == BuildField::Type::StaticLib) {
                 auto dependency_lib_relative = std::filesystem::proximate(child->static_library_path(), directory());
@@ -233,12 +232,12 @@ bool Context::build()
                 .args = std::move(archiver_flags),
                 .cwd = cwd() }));
         } else {
-//            m_build.linker_flags().push_back(std::make_shared<std::string>("-Wl,--start-group"));
+            //            m_build.linker_flags().push_back(std::make_shared<std::string>("-Wl,--start-group"));
             std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(m_build.linker_flags()));
             std::copy(objects.begin(), objects.end(), std::back_inserter(m_build.linker_flags()));
             std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(m_build.linker_flags()));
             std::copy(dependency_libs.begin(), dependency_libs.end(), std::back_inserter(m_build.linker_flags()));
-//            m_build.linker_flags().push_back(std::make_shared<std::string>("-Wl,--end-group"));
+            //            m_build.linker_flags().push_back(std::make_shared<std::string>("-Wl,--end-group"));
 
             m_build.linker_flags().push_back(std::make_shared<std::string>("-o"));
             auto link_exec = std::make_shared<std::string>(std::filesystem::proximate(executable_path(), directory()));
@@ -263,15 +262,9 @@ bool Context::build()
         exit(1);
     }
 
-    m_state = State::Built;
-
     // make sure, that all the children are built
     for (auto child : m_children) {
         if (child->operation() == Context::Operation::Build) {
-            if (child->m_build.type() == BuildField::Type::Unknown) {
-                std::this_thread::yield();
-                continue;
-            }
             if (child->m_build.type() == BuildField::Type::Executable) {
                 while (child->m_state != Context::State::Built) {
                     std::this_thread::yield();
@@ -279,6 +272,8 @@ bool Context::build()
             }
         }
     }
+
+    m_state = State::Built;
 
     if (root()) {
         Executor::the().stop();
