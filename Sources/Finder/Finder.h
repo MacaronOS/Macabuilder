@@ -11,16 +11,16 @@
 
 
 class Finder {
-    static constexpr auto BeelderExtensionPattern = "*.bee";
+    static constexpr auto MacaExtensionPattern = "*.maca";
 
 public:
-    static inline auto FindRootBeelderFiles()
+    static inline auto FindRootMacaFiles()
     {
-        return Glob(BeelderExtensionPattern).result();
+        return Glob(MacaExtensionPattern).result();
     }
-    static inline auto FindBeelderFiles(const std::string& directory, const std::string& pattern = "")
+    static inline auto FindMacaFiles(const std::string& directory, const std::string& pattern = "")
     {
-        auto path = std::filesystem::path(directory) / std::filesystem::path(pattern) / BeelderExtensionPattern;
+        auto path = std::filesystem::path(directory) / std::filesystem::path(pattern) / MacaExtensionPattern;
         return Glob(path).result();
     }
 

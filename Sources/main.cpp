@@ -10,19 +10,19 @@ int main(int argc, char** argv)
 {
     Config::the().process_arguments(argc, argv);
 
-    auto beelder_files = Finder::FindRootBeelderFiles();
+    auto maca_files = Finder::FindRootMacaFiles();
 
-    if (beelder_files.size() > 1) {
+    if (maca_files.size() > 1) {
         Log(Color::Red, "multiple root files are presented");
         exit(1);
     }
 
-    if (beelder_files.empty()) {
+    if (maca_files.empty()) {
         Log(Color::Red, "no root files are presented");
         exit(1);
     }
 
-    auto context = Context(beelder_files.front(), Context::Operation::Build, true);
+    auto context = Context(maca_files.front(), Context::Operation::Build, true);
     context.run();
 
     Executor::the().run();

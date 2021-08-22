@@ -36,11 +36,11 @@ void Context::run()
 
 bool Context::run_as_childs(const std::string& pattern, Operation operation)
 {
-    auto beelder_files = Finder::FindBeelderFiles(directory(), pattern);
-    if (beelder_files.empty()) {
+    auto maca_files = Finder::FindMacaFiles(directory(), pattern);
+    if (maca_files.empty()) {
         return false;
     }
-    for (auto& path : beelder_files) {
+    for (auto& path : maca_files) {
         auto _ = ScopedLocker(m_lock);
         auto context = get_context_by_path(path);
         if (context == nullptr) {
@@ -152,7 +152,7 @@ bool Context::build()
                 trigger_error("no option for extension \"" + extension + "\"");
             }
 
-            auto object = (beelder_path() / std::filesystem::proximate(file, directory())).string() + ".o";
+            auto object = (maca_path() / std::filesystem::proximate(file, directory())).string() + ".o";
             Finder::CreateDirectory(std::filesystem::path(object).parent_path());
 
             auto relative_source = std::filesystem::proximate(file, directory());
@@ -213,7 +213,7 @@ bool Context::build()
             size_t lastindex = m_path.string().find_last_of('.');
             std::string libname = m_path.string().substr(0, lastindex);
 
-            auto lib = (beelder_path() / std::filesystem::proximate(libname, directory())).string() + ".a";
+            auto lib = (maca_path() / std::filesystem::proximate(libname, directory())).string() + ".a";
             auto lib_relative = std::filesystem::proximate(lib, directory());
             auto lib_name = std::make_shared<std::string>(lib_relative);
 

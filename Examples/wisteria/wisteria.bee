@@ -14,7 +14,7 @@ Commands:
         sudo umount mountpoint,
 
     Run:
-        ./BeelderBuild/wisteria
+        ./MacaBuild/wisteria
 
 Build:
     Type: Executable

@@ -1,6 +1,7 @@
 #include "Config.h"
 
 #include <string>
+#include <iostream>
 
 void Config::process_arguments(int argc, char** argv)
 {

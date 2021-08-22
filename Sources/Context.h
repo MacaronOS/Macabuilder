@@ -1,5 +1,5 @@
 /*
- * Context object is an internal representation of a Beelder file,
+ * Context object is an internal representation of a Maca file,
  * which is being processed by a thread.
  */
 
@@ -61,25 +61,25 @@ public:
         }
         return cwd;
     }
-    inline std::string beelder_path() const
+    inline std::string maca_path() const
     {
         auto dir = directory();
         if (dir.empty()) {
-            return "BeelderBuild";
+            return "MacaBuild";
         }
-        return dir / "BeelderBuild";
+        return dir / "MacaBuild";
     }
     inline std::string static_library_path() const
     {
         size_t lastindex = m_path.string().find_last_of('.');
         std::string libname = m_path.string().substr(0, lastindex);
-        return (beelder_path() / std::filesystem::proximate(libname, directory())).string() + ".a";
+        return (maca_path() / std::filesystem::proximate(libname, directory())).string() + ".a";
     }
     inline std::string executable_path() const
     {
         size_t lastindex = m_path.string().find_last_of('.');
         std::string libname = m_path.string().substr(0, lastindex);
-        return (beelder_path() / std::filesystem::proximate(libname, directory())).string();
+        return (maca_path() / std::filesystem::proximate(libname, directory())).string();
     }
     inline bool root_ctx() const { return m_root_ctx; }
     inline std::string name() const { return std::filesystem::path(executable_path()).filename(); }
