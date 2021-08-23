@@ -3,6 +3,17 @@ Simple and yet efficient build system primarily oriented on C and C++ mixed with
 
 <img src="https://github.com/MacaronOS/Macabuilder/blob/main/Assets/wisteria-build-test.gif" width="500" alt="WisteriaOS build demo">
 
+## How to build this project?
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+Now you have a Macabuilder executable inside your build folder. You can create an alias
+or add it in your PATH or just reference it by an absolute path from other projects. 
+
+
 ## What's the point?
 If you want to build a low level project (Operating system is a perfect example)
 usually you have a lot of configurability to deal with. For example:
