@@ -1,4 +1,5 @@
 #include "Executor.h"
+#include "../Config.h"
 #include "../Context.h"
 #include "../Utils/Logger.h"
 #include "ExecutableUnit.h"
@@ -18,6 +19,7 @@ void Executor::run()
                 if (cmd.exit_status()) {
                     Log(Color::Red, "Build error:", cmd.executable_unit()->src);
                     cmd.executable_unit()->ctx->m_state = Context::State::BuildError;
+                    cmd.executable_unit()->ctx->mark_source_as_failed(cmd.executable_unit()->src);
                 } else {
                     if (!cmd.std_out().empty() || !cmd.std_err().empty()) {
                         Log(Color::Yellow, "Built with warnings:", cmd.executable_unit()->src);

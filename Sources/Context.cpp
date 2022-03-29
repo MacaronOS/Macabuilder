@@ -5,6 +5,8 @@
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
 #include "Parser/Parser.h"
+#include "TimeStampDumper.h"
+#include "TimeStampParser.h"
 #include "Translator/Translator.h"
 
 #include <numeric>
@@ -13,6 +15,11 @@
 
 std::unordered_map<std::string, Context*> Context::s_processing_contexts = {};
 SpinLock Context::m_lock = {};
+
+static int last_modification_time(const std::filesystem::path& file)
+{
+    return static_cast<int>(std::filesystem::last_write_time(file).time_since_epoch() / std::chrono::seconds(1));
+}
 
 Context::Context(std::filesystem::path path, Context::Operation operation, bool root_ctx)
     : m_path(std::move(path))
@@ -139,12 +146,21 @@ void Context::process_by_mode()
 
 bool Context::build()
 {
+    fill_timestamps();
+
     std::vector<std::shared_ptr<std::string>> objects {};
 
     for (auto& source : m_build.sources()) {
         auto files = Finder::FindFiles(directory(), *source);
 
         for (auto& file : files) {
+            bool recompile_file = false;
+            if (scan_include(file) == IncludeStatus::NeedsRecompilation) {
+                recompile_file = true;
+            }
+
+            m_was_any_recompilation |= recompile_file;
+
             auto extension = file.string().substr(file.string().find_last_of('.') + 1);
             auto option = m_build.get_option_for_extension(extension);
 
@@ -157,6 +173,12 @@ bool Context::build()
 
             auto relative_source = std::filesystem::proximate(file, directory());
             auto relative_object = std::filesystem::proximate(object, directory());
+
+            objects.push_back(std::make_shared<std::string>(relative_object));
+
+            if (!recompile_file && std::filesystem::exists(object)) {
+                continue;
+            }
 
             auto flags = option->flags;
 
@@ -177,8 +199,6 @@ bool Context::build()
                 .args = std::move(flags),
                 .cwd = cwd(),
             }));
-
-            objects.push_back(std::make_shared<std::string>(relative_object));
         }
     }
 
@@ -186,6 +206,8 @@ bool Context::build()
     while (compile_counter > 0) {
         std::this_thread::yield();
     }
+
+    dump_timestamps();
 
     // wait for the finalization of the dependent static libs
     auto dependency_libs = std::vector<std::shared_ptr<std::string>>();
@@ -200,6 +222,7 @@ bool Context::build()
                 while (child->m_state != Context::State::Built) {
                     std::this_thread::yield();
                 }
+                m_was_any_recompilation |= child->m_was_any_recompilation;
             }
         }
     }
@@ -208,7 +231,8 @@ bool Context::build()
     if (m_state == State::BuildError) {
         exit(1);
     }
-    if (!objects.empty()) {
+
+    if (m_was_any_recompilation && !objects.empty()) {
         if (m_build.type() == BuildField::Type::StaticLib) {
             size_t lastindex = m_path.string().find_last_of('.');
             std::string libname = m_path.string().substr(0, lastindex);
@@ -281,4 +305,83 @@ bool Context::build()
     }
 
     return false;
+}
+
+IncludeStatus Context::scan_include(const std::filesystem::path& file)
+{
+    if (m_include_status[file] != IncludeStatus::NotVisited) {
+        return m_include_status[file];
+    }
+
+    auto recursive_include_parser = [&](const std::string& include, bool global) {
+        std::filesystem::path include_path;
+
+        if (!global) {
+            include_path = file.parent_path() / include;
+            if (!std::filesystem::exists(include_path)) {
+                trigger_error("can\'t find relative include file \"" + include + "\" in " + file.string());
+            }
+        } else {
+            for (auto& header_folder : m_build.header_folders()) {
+                auto path = directory() / *header_folder / include;
+                if (std::filesystem::exists(path)) {
+                    include_path = path;
+                    break;
+                }
+            }
+        }
+
+#if 0
+        std::cout << "looking at include: " << include << " from file: " << file << " by path: " << include_path << "\n";
+#endif
+
+        if (include_path.empty()) {
+            return;
+        }
+
+        auto include_status = scan_include(include_path);
+        if (include_status == IncludeStatus::NeedsRecompilation) {
+            m_include_status[file] = IncludeStatus::NeedsRecompilation;
+        }
+    };
+
+    IncludeParser(file).run(recursive_include_parser);
+
+    if (m_include_status[file] == IncludeStatus::NeedsRecompilation) {
+        return m_include_status[file];
+    }
+
+    auto path_in_timestamps_file = std::filesystem::proximate(file, directory());
+    if (last_modification_time(file) >= m_timestamps[path_in_timestamps_file]) {
+        m_include_status[file] = IncludeStatus::NeedsRecompilation;
+    } else {
+        m_include_status[file] = IncludeStatus::UpToDate;
+    }
+
+    return m_include_status[file];
+}
+
+void Context::fill_timestamps()
+{
+    TimeStampParser(timestamps_path()).run([&](const std::string& path, int timestamp) {
+        m_timestamps[path] = timestamp;
+    });
+}
+
+void Context::dump_timestamps()
+{
+    auto td = TimeStampDumper(timestamps_path());
+
+    for (auto& [path, status] : m_include_status) {
+        if (status == IncludeStatus::NeedsRecompilation) {
+            auto path_in_timestamps_file = std::filesystem::proximate(path, directory());
+            if (!m_failed_sources.contains(path_in_timestamps_file)) {
+                m_timestamps[path_in_timestamps_file] = Config::the().timestamp();
+            }
+        }
+    }
+
+    for (auto& [path, timestamp] : m_timestamps) {
+        td.append(path, timestamp);
+    }
 }

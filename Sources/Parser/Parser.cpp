@@ -119,6 +119,11 @@ void Parser::parse_build()
                     trigger_error_on_line(build_subfield.line(), "referenced dependency \"" + *dependency + "\" does not exist");
                 }
             }
+        } else if (build_subfield.content() == "HeaderFolders") {
+            eat_sub_rule_hard();
+            parse_argument_list([&](const Token& header_folder) {
+                context->m_build.add_header_folder(header_folder.content_ptr());
+            });
         } else if (build_subfield.content() == "Src") {
             eat_sub_rule_hard();
             parse_argument_list([&](const Token& source) {

@@ -38,6 +38,11 @@ public:
         m_depends.push_back(dependency);
     }
 
+    inline void add_header_folder(const std::shared_ptr<std::string>& header_folder)
+    {
+        m_header_folders.push_back(header_folder);
+    }
+
     inline void add_source(const std::shared_ptr<std::string>& source)
     {
         m_sources.push_back(source);
@@ -63,6 +68,7 @@ public:
 
     inline Type type() const { return m_type; }
     inline const auto& depends() const { return m_depends; }
+    inline const auto& header_folders() const { return m_header_folders; }
     inline const auto& sources() const { return m_sources; }
     auto& linker() { return m_linker; }
     auto& archiver() { return m_archiver; }
@@ -80,6 +86,7 @@ public:
 private:
     Type m_type {};
     std::vector<std::shared_ptr<std::string>> m_depends {};
+    std::vector<std::shared_ptr<std::string>> m_header_folders {};
     std::vector<std::shared_ptr<std::string>> m_sources {};
     std::unordered_map<std::string, ExtensionOption> m_extensions {};
 

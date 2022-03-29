@@ -7,6 +7,7 @@
 
 #include "Executor/Executor.h"
 #include "Finder/Finder.h"
+#include "IncludeParser.h"
 #include "Parser/Parser.h"
 #include "Utils/Lock.h"
 #include "Utils/Logger.h"
@@ -25,6 +26,12 @@
 #include <unordered_set>
 
 constexpr size_t path_max = 4096;
+
+enum class IncludeStatus {
+    NotVisited,
+    NeedsRecompilation,
+    UpToDate,
+};
 
 class Context {
     friend class Parser;
@@ -81,6 +88,10 @@ public:
         std::string libname = m_path.string().substr(0, lastindex);
         return (maca_path() / std::filesystem::proximate(libname, directory())).string();
     }
+    inline std::string timestamps_path() const
+    {
+        return std::filesystem::path(maca_path()) / "timestamps.macainfo";
+    }
     inline bool root_ctx() const { return m_root_ctx; }
     inline std::string name() const { return std::filesystem::path(executable_path()).filename(); }
     inline bool root() const { return directory().empty(); }
@@ -91,7 +102,16 @@ private:
     void validate_fields();
     bool merge_children();
     bool build();
+    void fill_timestamps();
+    void dump_timestamps();
     void process_by_mode();
+
+    IncludeStatus scan_include(const std::filesystem::path& file);
+
+    inline void mark_source_as_failed(const std::string& failed_source)
+    {
+        m_failed_sources.insert(std::filesystem::proximate(directory(), failed_source));
+    }
 
     inline void trigger_error(const std::string& error)
     {
@@ -138,6 +158,11 @@ private:
 
     // if included context contains a build field it's going to be built separately
     std::vector<BuildField> m_children_builds {};
+
+    bool m_was_any_recompilation {};
+    std::unordered_map<std::string, int> m_timestamps {};
+    std::unordered_map<std::string, IncludeStatus> m_include_status {};
+    std::unordered_set<std::string> m_failed_sources {};
 
     static SpinLock m_lock;
     static std::unordered_map<std::string, Context*> s_processing_contexts;

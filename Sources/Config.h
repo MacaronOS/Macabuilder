@@ -25,11 +25,13 @@ public:
     const auto& filename() const { return m_filename; }
     const auto& arguments() const { return m_arguments; }
     Mode mode() const { return m_mode; }
+    int timestamp() const { return m_timestamp; }
 
 private:
-    Config() = default;
+    Config();
 
 private:
+    int m_timestamp;
     std::string m_filename {};
     std::vector<std::string> m_arguments {};
     Mode m_mode {};
