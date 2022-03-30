@@ -153,16 +153,18 @@ private:
     std::atomic<int> compile_counter {};
     bool done_finalizer {};
 
-    // childs options
+    // Children options
     std::vector<Context*> m_children {};
 
-    // if included context contains a build field it's going to be built separately
+    // If included context contains a build field it's going to be built separately
     std::vector<BuildField> m_children_builds {};
 
     bool m_was_any_recompilation {};
     std::unordered_map<std::string, int> m_timestamps {};
     std::unordered_map<std::string, IncludeStatus> m_include_status {};
     std::unordered_set<std::string> m_failed_sources {};
+    std::vector<std::string> m_visited_stack {};
+    std::unordered_map<std::string, size_t> m_path_to_visited_stack_index {};
 
     static SpinLock m_lock;
     static std::unordered_map<std::string, Context*> s_processing_contexts;

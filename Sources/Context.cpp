@@ -309,6 +309,18 @@ bool Context::build()
 
 IncludeStatus Context::scan_include(const std::filesystem::path& file)
 {
+    auto path_in_timestamps_file = std::filesystem::proximate(file, directory());
+
+    if (m_path_to_visited_stack_index.contains(path_in_timestamps_file)) {
+        std::stringstream error_builder;
+        error_builder << "detected a circular dependency starting from \"" + file.string() + "\".\n\nInclude stack:\n\n";
+        for (size_t i = m_path_to_visited_stack_index[path_in_timestamps_file] ; i < m_visited_stack.size(); i++) {
+            error_builder << m_visited_stack[i] << "\n";
+        }
+        error_builder << path_in_timestamps_file.string() << "\n";
+        trigger_error(error_builder.str());
+    }
+
     if (m_include_status[file] != IncludeStatus::NotVisited) {
         return m_include_status[file];
     }
@@ -345,13 +357,16 @@ IncludeStatus Context::scan_include(const std::filesystem::path& file)
         }
     };
 
+    m_visited_stack.push_back(path_in_timestamps_file);
+    m_path_to_visited_stack_index[path_in_timestamps_file] = m_visited_stack.size() - 1;
     IncludeParser(file).run(recursive_include_parser);
+    m_visited_stack.pop_back();
+    m_path_to_visited_stack_index.erase(path_in_timestamps_file);
 
     if (m_include_status[file] == IncludeStatus::NeedsRecompilation) {
         return m_include_status[file];
     }
 
-    auto path_in_timestamps_file = std::filesystem::proximate(file, directory());
     if (last_modification_time(file) >= m_timestamps[path_in_timestamps_file]) {
         m_include_status[file] = IncludeStatus::NeedsRecompilation;
     } else {
