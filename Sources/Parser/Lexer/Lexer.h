@@ -22,7 +22,15 @@ public:
 
 public:
     const std::string path() const { return m_path; }
-    const std::vector<Token>& tokens() const { return m_tokens; }
+    std::vector<Token>& tokens() { return m_tokens; }
+
+    template <typename Callback>
+    void process_variables(Callback callback)
+    {
+        for (size_t i : m_variables) {
+            callback(m_tokens[i]);
+        }
+    }
 
 private:
     int calc_nesting_for_cur_line();
@@ -59,4 +67,6 @@ private:
 
     std::size_t m_token_line { 1 };
     std::vector<Token> m_tokens {};
+
+    std::vector<size_t> m_variables {};
 };

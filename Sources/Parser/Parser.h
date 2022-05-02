@@ -43,6 +43,8 @@ private:
     void parse_argument_list(TokenProcessor);
     void parse_lined_argument_list(size_t line, TokenProcessor);
 
+    void process_variables();
+
 private:
     inline void eat_sub_rule_hard()
     {

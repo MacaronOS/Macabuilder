@@ -41,16 +41,40 @@ void Lexer::run()
                 cur_word.push_back(eat());
                 continue;
             }
+
             auto token = Token::TokenFromChar(c, nesting, m_token_line);
 
             if (token.type() == Token::Type::Default) {
                 cur_word.push_back(c);
-            } else {
-                m_tokens.emplace_back(std::move(cur_word), Token::Type::Default, nesting, m_token_line);
-                m_tokens.push_back(token);
-                eat_spaces();
-                cur_word = {};
+                continue;
             }
+
+            if (token.type() == Token::Type::VariableBegin) {
+                if (!cur_word.empty()) {
+                    m_tokens.emplace_back(cur_word, Token::Type::Default, nesting, m_token_line);
+                    cur_word.clear();
+                }
+                while (char var_c = eat()) {
+                    if (Token::token_type(var_c) == Token::Type::VariableEnd) {
+                        break;
+                    }
+                    cur_word.push_back(var_c);
+                }
+                token.m_content = std::make_shared<std::string>(cur_word);
+                token.m_type = Token::Type::Variable;
+                m_tokens.push_back(token);
+                m_variables.push_back(m_tokens.size() - 1);
+                eat_spaces();
+                cur_word.clear();
+                continue;
+            }
+
+            if (!cur_word.empty()) {
+                m_tokens.emplace_back(cur_word, Token::Type::Default, nesting, m_token_line);
+                cur_word.clear();
+            }
+            m_tokens.push_back(token);
+            eat_spaces();
         }
 
         if (!cur_word.empty()) {

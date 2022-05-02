@@ -15,7 +15,7 @@ public:
         return true;
     }
 
-    auto& defines() const { return m_defines; }
+    auto& defines() { return m_defines; }
 
 private:
     std::unordered_map<std::string, std::shared_ptr<std::string>> m_defines;

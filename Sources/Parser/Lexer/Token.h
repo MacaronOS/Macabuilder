@@ -3,12 +3,20 @@
 #include <string>
 #include <utility>
 
+class Parser;
+class Lexer;
 class Token {
+    friend class Parser;
+    friend class Lexer;
+
 public:
     enum class Type {
         Default,
         SubRule, // :
         Comma,
+        VariableBegin,
+        VariableEnd,
+        Variable,
     };
 
 public:
@@ -29,13 +37,22 @@ public:
 
     static Token TokenFromChar(char c, int nesting, size_t line)
     {
-        if (c == ',') {
-            return Token(Type::Comma, nesting, line);
+        return Token(token_type(c), nesting, line);
+    }
+
+    static Type token_type(char c)
+    {
+        switch (c) {
+        case ',':
+            return Type::Comma;
+        case ':':
+            return Type::SubRule;
+        case '{':
+            return Type::VariableBegin;
+        case '}':
+            return Type::VariableEnd;
         }
-        if (c == ':') {
-            return Token(Type::SubRule, nesting, line);
-        }
-        return Token(Type::Default, nesting, line);
+        return Type::Default;
     }
 
     auto& content() { return *m_content; }

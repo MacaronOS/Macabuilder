@@ -31,7 +31,7 @@ void Parser::run()
 
     while (auto token = lookup()) {
         if (token->type() != Token::Type::Default || !token->content_ptr()) {
-            trigger_error_on_line(token->line(), "met unexpected token ");
+            trigger_error_on_line(token->line(), "met unexpected token " + token->to_string());
         }
         if (token->content() == "Include") {
             parse_include();
@@ -43,6 +43,7 @@ void Parser::run()
             }
         } else if (token->content() == "Define") {
             parse_defines();
+            process_variables();
         } else if (token->content() == "Commands") {
             parse_commands();
         } else if (token->content() == "Build") {
@@ -272,8 +273,10 @@ void Parser::parse_argument_list_of_rule(const Token& rule, TokenProcessor proce
 void Parser::parse_lined_argument_list(size_t line, TokenProcessor process_token)
 {
     process_token(*eat());
-    while (lookup() && lookup()->type() == Token::Type::Comma) {
-        eat();
+    while (lookup()) {
+        if (lookup()->type() == Token::Type::Comma) {
+            eat();
+        }
         if (lookup()->line() != line) {
             return;
         }
@@ -282,4 +285,20 @@ void Parser::parse_lined_argument_list(size_t line, TokenProcessor process_token
         }
         process_token(*eat());
     }
+}
+
+void Parser::process_variables()
+{
+    lexer.process_variables([this](Token& token) {
+        auto& variable_name = token.content();
+        if (variable_name.empty()) {
+            trigger_error_on_line(token.line(), "variable has no name");
+        }
+        if (!context->m_defines.defines().contains(variable_name)) {
+            trigger_error_on_line(token.line(), "variable " + variable_name + " was not defined");
+        }
+
+        token.m_content = context->m_defines.defines()[variable_name];
+        token.m_type = Token::Type::Default;
+    });
 }
