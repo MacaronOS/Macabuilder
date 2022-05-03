@@ -14,6 +14,7 @@ public:
         Default,
         SubRule, // :
         Comma,
+        Equal,
         VariableBegin,
         VariableEnd,
         Variable,
@@ -47,6 +48,8 @@ public:
             return Type::Comma;
         case ':':
             return Type::SubRule;
+        case '~':
+            return Type::Equal;
         case '{':
             return Type::VariableBegin;
         case '}':
@@ -72,6 +75,9 @@ public:
         }
         if (m_type == Type::SubRule) {
             return "SubRule";
+        }
+        if (m_type == Type::Equal) {
+            return "Equal";
         }
         return "[" + content() + "]";
     }

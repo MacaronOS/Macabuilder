@@ -3,6 +3,7 @@
 #include <functional>
 #include <iostream>
 
+#include "../Config.h"
 #include "../Context.h"
 
 Parser::Parser(const std::string& path, Context* context)
@@ -73,15 +74,37 @@ void Parser::parse_defines()
     eat_sub_rule_hard();
 
     // define key - value pairs should be at separated lines
-    // and have a nesting equals one
-    parse_line_by_line(1, [this](const Token& key) {
-        eat_sub_rule_hard();
-        auto value = eat();
-        if (!value || value->line() != key.line()) {
-            trigger_error_on_line(key.line(), "invalid pair for a key");
-        }
-        context->m_defines.add_define(key.content(), value->content_ptr());
-    });
+
+    std::function<void(int, bool)> parse_define_paris = [&](int nesting, bool save_result) {
+        parse_line_by_line(nesting, [&](const Token& key_or_lhs) {
+            if (lookup()->type() == Token::Type::SubRule) {
+                eat();
+                auto value = eat();
+                if (!value || value->line() != key_or_lhs.line()) {
+                    trigger_error_on_line(key_or_lhs.line(), "invalid pair for a key");
+                }
+                if (save_result) {
+                    context->m_defines.add_define(key_or_lhs.content(), value->content_ptr());
+                }
+                return;
+            }
+
+            if (lookup()->type() == Token::Type::Equal) {
+                eat();
+                auto rhs = eat();
+                if (!rhs || rhs->line() != key_or_lhs.line()) {
+                    trigger_error_on_line(key_or_lhs.line(), "no right hand sight for equal operation");
+                }
+                eat_sub_rule_hard();
+                parse_define_paris(nesting + 1, Config::the().flags()[key_or_lhs.content()] == rhs->content());
+                return;
+            }
+
+            trigger_error_on_line(key_or_lhs.line(), "incorrect define line");
+        });
+    };
+
+    parse_define_paris(1, true);
 }
 
 void Parser::parse_commands()

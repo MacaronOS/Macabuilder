@@ -13,9 +13,19 @@ void Config::process_arguments(int argc, char** argv)
 {
     if (argc > 0) {
         m_filename = std::string(argv[0]);
-        m_arguments.reserve(argc);
         for (size_t at = 1; at < argc; at++) {
-            m_arguments.emplace_back(argv[at]);
+            std::string arg = argv[at];
+            if (arg.starts_with('-')) {
+                auto del = arg.find('~');
+                auto key = arg.substr(1, del - 1);
+                std::string val;
+                if (del != std::string::npos) {
+                    val = arg.substr(del + 1, arg.size());
+                }
+                m_flags[key] = val;
+            } else {
+                m_arguments.emplace_back(argv[at]);
+            }
         }
     }
 
