@@ -52,7 +52,7 @@ public:
     };
 
 public:
-    Context(std::filesystem::path path, Operation operation, bool root_ctx = false);
+    Context(std::filesystem::path path, Operation operation, const DefinesField& defines = {}, bool root_ctx = false);
 
     void run();
     bool run_as_childs(const std::string& pattern, Operation operation);

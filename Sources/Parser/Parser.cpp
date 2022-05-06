@@ -29,6 +29,7 @@ Parser& Parser::operator=(Parser&& parser) noexcept
 void Parser::run()
 {
     lexer.run();
+    process_variables(false);
 
     while (auto token = lookup()) {
         if (token->type() != Token::Type::Default || !token->content_ptr()) {
@@ -44,7 +45,7 @@ void Parser::run()
             }
         } else if (token->content() == "Define") {
             parse_defines();
-            process_variables();
+            process_variables(true);
         } else if (token->content() == "Commands") {
             parse_commands();
         } else if (token->content() == "Build") {
@@ -56,6 +57,8 @@ void Parser::run()
             break;
         }
     }
+
+    process_variables(true);
 }
 
 void Parser::parse_include()
@@ -310,14 +313,20 @@ void Parser::parse_lined_argument_list(size_t line, TokenProcessor process_token
     }
 }
 
-void Parser::process_variables()
+void Parser::process_variables(bool can_fail)
 {
-    lexer.process_variables([this](Token& token) {
+    lexer.process_variables([&](Token& token) {
         auto& variable_name = token.content();
         if (variable_name.empty()) {
+            if (!can_fail) {
+                return;
+            }
             trigger_error_on_line(token.line(), "variable has no name");
         }
         if (!context->m_defines.defines().contains(variable_name)) {
+            if (!can_fail) {
+                return;
+            }
             trigger_error_on_line(token.line(), "variable " + variable_name + " was not defined");
         }
 

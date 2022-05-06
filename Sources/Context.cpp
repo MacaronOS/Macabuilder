@@ -21,9 +21,10 @@ static int last_modification_time(const std::filesystem::path& file)
     return static_cast<int>(std::filesystem::last_write_time(file).time_since_epoch() / std::chrono::seconds(1));
 }
 
-Context::Context(std::filesystem::path path, Context::Operation operation, bool root_ctx)
+Context::Context(std::filesystem::path path, Context::Operation operation, const DefinesField& defines, bool root_ctx)
     : m_path(std::move(path))
     , m_operation(operation)
+    , m_defines(defines)
     , m_root_ctx(root_ctx)
 {
     parser = Parser(m_path, this);
@@ -51,7 +52,7 @@ bool Context::run_as_childs(const std::string& pattern, Operation operation)
         auto _ = ScopedLocker(m_lock);
         auto context = get_context_by_path(path);
         if (context == nullptr) {
-            auto child = new Context(path, operation);
+            auto child = new Context(path, operation, m_defines);
             m_children.push_back(child);
             register_context(path, child);
             child->run();

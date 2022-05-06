@@ -22,7 +22,7 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    auto context = Context(maca_files.front(), Context::Operation::Build, true);
+    auto context = Context(maca_files.front(), Context::Operation::Build, {}, true);
     context.run();
 
     Executor::the().run();

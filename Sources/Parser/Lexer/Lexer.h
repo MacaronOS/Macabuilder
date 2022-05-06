@@ -28,7 +28,10 @@ public:
     void process_variables(Callback callback)
     {
         for (size_t i : m_variables) {
-            callback(m_tokens[i]);
+            // If this is still an unhandled variable.
+            if (m_tokens[i].type() == Token::Type::Variable) {
+                callback(m_tokens[i]);
+            }
         }
     }
 
