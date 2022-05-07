@@ -66,8 +66,8 @@ void Parser::parse_include()
     eat(); // Include
     eat_sub_rule_hard();
 
-    parse_argument_list([this](const Token& token) {
-        context->m_include.add_path(token.content_ptr());
+    parse_argument_list([this](const std::shared_ptr<std::string>& content) {
+        context->m_include.add_path(content);
     });
 }
 
@@ -117,8 +117,8 @@ void Parser::parse_commands()
 
     parse_line_by_line(1, [this](const Token& cmd) {
         eat_sub_rule_hard();
-        parse_argument_list([&](const Token& token) {
-            context->m_commands.append_to_command(cmd.content(), token.content_ptr());
+        parse_argument_list([&](const std::shared_ptr<std::string>& content) {
+            context->m_commands.append_to_command(cmd.content(), content);
         });
     });
 }
@@ -131,14 +131,14 @@ void Parser::parse_build()
     parse_line_by_line(1, [&](const Token& build_subfield) {
         if (build_subfield.content() == "Type") {
             eat_sub_rule_hard();
-            auto type = parse_single_argument();
-            if (!context->m_build.set_type(type->content())) {
-                trigger_error_on_line(type->line(), "incorrect type (choose either StaticLib or Executable)");
+            auto type = parse_single_argument(build_subfield.line());
+            if (!context->m_build.set_type(*type)) {
+                trigger_error_on_line(build_subfield.line(), "incorrect type (choose either StaticLib or Executable)");
             }
         } else if (build_subfield.content() == "Depends") {
             eat_sub_rule_hard();
-            parse_argument_list([&](const Token& dependency) {
-                context->m_build.add_dependency(dependency.content_ptr());
+            parse_argument_list([&](const std::shared_ptr<std::string>& dependency) {
+                context->m_build.add_dependency(dependency);
             });
             // as soon as depends list is parsed, we are ready to process referenced files in different threads
             for (auto& dependency : context->m_build.depends()) {
@@ -148,13 +148,13 @@ void Parser::parse_build()
             }
         } else if (build_subfield.content() == "HeaderFolders") {
             eat_sub_rule_hard();
-            parse_argument_list([&](const Token& header_folder) {
-                context->m_build.add_header_folder(header_folder.content_ptr());
+            parse_argument_list([&](const std::shared_ptr<std::string>& header_folder) {
+                context->m_build.add_header_folder(header_folder);
             });
         } else if (build_subfield.content() == "Src") {
             eat_sub_rule_hard();
-            parse_argument_list([&](const Token& source) {
-                context->m_build.add_source(source.content_ptr());
+            parse_argument_list([&](const std::shared_ptr<std::string>& source) {
+                context->m_build.add_source(source);
             });
         } else if (build_subfield.content() == "Extensions") {
             eat_sub_rule_hard();
@@ -167,22 +167,22 @@ void Parser::parse_build()
                     auto compiler_or_flag = parse_single_argument_of_rule(extension);
                     if (compiler_or_flag) {
                         options_specified = true;
-                        if (compiler_or_flag->content() == "Compiler") {
+                        if (*compiler_or_flag == "Compiler") {
                             eat_sub_rule_hard();
-                            auto compiler = parse_single_argument();
+                            auto compiler = parse_single_argument(extension.line());
                             if (!compiler) {
-                                trigger_error_on_line(compiler_or_flag->line(), " no compiler is specified");
+                                trigger_error_on_line(extension.line(), " no compiler is specified");
                             }
-                            if (!context->m_build.set_compiler_to_extension(extension.content_ptr(), compiler->content_ptr())) {
-                                trigger_error_on_line(compiler->line(), "compiler redefinition");
+                            if (!context->m_build.set_compiler_to_extension(extension.content_ptr(), compiler)) {
+                                trigger_error_on_line(extension.line(), "compiler redefinition");
                             }
-                        } else if (compiler_or_flag->content() == "Flags") {
+                        } else if (*compiler_or_flag == "Flags") {
                             eat_sub_rule_hard();
-                            parse_argument_list([&](const Token& flag) {
-                                context->m_build.add_flag_to_extension(extension.content_ptr(), flag.content_ptr());
+                            parse_argument_list([&](const std::shared_ptr<std::string>& flag) {
+                                context->m_build.add_flag_to_extension(extension.content_ptr(), flag);
                             });
                         } else {
-                            trigger_error_on_line(compiler_or_flag->line(), "invalid option for extension - " + compiler_or_flag->content());
+                            trigger_error_on_line(extension.line(), "invalid option for extension - " + *compiler_or_flag);
                         }
                     }
                 }
@@ -201,12 +201,12 @@ void Parser::parse_build()
                     if (!linker) {
                         trigger_error_on_line(linker_or_flags.line(), "no linker is specified");
                     } else {
-                        context->m_build.set_linker(linker->content_ptr());
+                        context->m_build.set_linker(linker);
                     }
                 } else if (linker_or_flags.content() == "Flags") {
                     eat_sub_rule_hard();
-                    parse_argument_list_of_rule(linker_or_flags, [this](const Token& flag) {
-                        context->m_build.add_linker_flag(flag.content_ptr());
+                    parse_argument_list_of_rule(linker_or_flags, [this](const std::shared_ptr<std::string>& flag) {
+                        context->m_build.add_linker_flag(flag);
                     });
                 } else {
                     trigger_error_on_line(linker_or_flags.line(), "unknown Link option \"" + linker_or_flags.content() + "\"");
@@ -218,7 +218,7 @@ void Parser::parse_build()
             if (!archiver) {
                 trigger_error_on_line(build_subfield.line(), "no Archiver is specified");
             } else {
-                context->m_build.set_archiver(archiver->content_ptr());
+                context->m_build.set_archiver(archiver);
             }
         } else {
             trigger_error_on_line(build_subfield.line(), "met unexpected Build subfield \"" + build_subfield.content() + "\"");
@@ -231,8 +231,8 @@ void Parser::parse_default()
     eat(); // Default
     eat_sub_rule_hard();
 
-    parse_argument_list([this](const Token& token) {
-        context->m_default.add_command_to_sequence(token.content_ptr());
+    parse_argument_list([this](const std::shared_ptr<std::string>& content) {
+        context->m_default.add_command_to_sequence(content);
     });
 }
 
@@ -243,36 +243,36 @@ void Parser::parse_line_by_line(size_t nesting, TokenProcessor process_token)
     }
 }
 
-Token const* Parser::parse_single_argument()
+std::shared_ptr<std::string> Parser::parse_single_argument(size_t line)
 {
-    Token const* arg = nullptr;
-    parse_argument_list([&](const Token& token) {
+    std::shared_ptr<std::string> arg;
+    parse_argument_list([&](const std::shared_ptr<std::string>& content) {
         if (arg) [[unlikely]] {
-            trigger_error_on_line(token.line(), "only one argument is allowed");
+            trigger_error_on_line(line, "only one argument is allowed");
         }
-        arg = &token;
+        arg = content;
     });
     return arg;
 }
 
-Token const* Parser::parse_single_argument_of_rule(const Token& rule)
+std::shared_ptr<std::string> Parser::parse_single_argument_of_rule(const Token& rule)
 {
-    Token const* arg = nullptr;
-    parse_argument_list_of_rule(rule, [&](const Token& token) {
+    std::shared_ptr<std::string> arg;
+    parse_argument_list_of_rule(rule, [&](const std::shared_ptr<std::string>& content) {
         if (arg) [[unlikely]] {
-            trigger_error_on_line(token.line(), "only one argument is allowed");
+            trigger_error_on_line(rule.line(), "only one argument is allowed");
         }
-        arg = &token;
+        arg = content;
     });
     return arg;
 }
 
-void Parser::parse_argument_list(TokenProcessor process_token)
+void Parser::parse_argument_list(TokenContentProcessor process_content)
 {
-    parse_argument_list_of_rule(*lookup(-1), process_token);
+    parse_argument_list_of_rule(*lookup(-1), process_content);
 }
 
-void Parser::parse_argument_list_of_rule(const Token& rule, TokenProcessor process_token)
+void Parser::parse_argument_list_of_rule(const Token& rule, TokenContentProcessor process_content)
 {
     size_t sub_rule_line = rule.line();
     int sub_rule_nesting = rule.nesting();
@@ -283,7 +283,7 @@ void Parser::parse_argument_list_of_rule(const Token& rule, TokenProcessor proce
 
     // one line argument list
     if (sub_rule_line == lookup()->line()) {
-        parse_lined_argument_list(sub_rule_line, process_token);
+        parse_lined_argument_list(sub_rule_line, process_content);
         return;
     }
 
@@ -291,25 +291,41 @@ void Parser::parse_argument_list_of_rule(const Token& rule, TokenProcessor proce
     if (sub_rule_nesting < lookup()->nesting()) {
         int multiple_lines_nesting = lookup()->nesting();
         while (lookup() && lookup()->type() == Token::Type::Default && lookup()->nesting() == multiple_lines_nesting) {
-            parse_lined_argument_list(lookup()->line(), process_token);
+            parse_lined_argument_list(lookup()->line(), process_content);
         }
     }
 }
 
-void Parser::parse_lined_argument_list(size_t line, TokenProcessor process_token)
+void Parser::parse_lined_argument_list(size_t line, TokenContentProcessor process_content)
 {
-    process_token(*eat());
+    auto arg = eat()->content_ptr();
+
     while (lookup()) {
-        if (lookup()->type() == Token::Type::Comma) {
-            eat();
-        }
         if (lookup()->line() != line) {
-            return;
+            break;
         }
-        if (lookup()->type() != Token::Type::Default) {
-            return;
+
+        if (lookup()->type() == Token::Type::Comma) {
+            process_content(arg);
+            arg = nullptr;
+            eat();
+            continue;
         }
-        process_token(*eat());
+
+        if (lookup()->type() == Token::Type::Default) {
+            if (!arg) {
+                arg = eat()->content_ptr();
+            } else {
+                arg = std::make_shared<std::string>(*arg + eat()->content());
+            }
+            continue;
+        }
+
+        break;
+    }
+
+    if (arg) {
+        process_content(arg);
     }
 }
 

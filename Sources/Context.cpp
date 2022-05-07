@@ -162,11 +162,9 @@ bool Context::build()
 
             m_was_any_recompilation |= recompile_file;
 
-            auto extension = file.string().substr(file.string().find_last_of('.') + 1);
-            auto option = m_build.get_option_for_extension(extension);
-
+            auto option = m_build.get_option_for_file(file);
             if (!option) {
-                trigger_error("no option for extension \"" + extension + "\"");
+                trigger_error("no option for file \"" + file.string() + "\"");
             }
 
             auto object = (maca_path() / std::filesystem::proximate(file, directory())).string() + ".o";

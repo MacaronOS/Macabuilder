@@ -75,12 +75,14 @@ public:
     auto& linker_flags() { return m_linker_flags; }
     const auto& extensions() const { return m_extensions; }
 
-    inline ExtensionOption* get_option_for_extension(const std::string& extension)
+    inline ExtensionOption* get_option_for_file(const std::string& file)
     {
-        if (!m_extensions.contains(extension)) {
-            return nullptr;
+        for (auto& extension : m_extensions) {
+            if (file.ends_with(extension.first)) {
+                return &extension.second;
+            }
         }
-        return &m_extensions[extension];
+        return nullptr;
     }
 
 private:

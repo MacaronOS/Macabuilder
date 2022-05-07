@@ -3,6 +3,7 @@
 #include "file.hpp"
 
 extern void print(const std::string& m);
+extern void print2(const std::string& m);
 
 int main(int argc, char** argv) {
     if (argc < 0) [[unlikely]] {
@@ -11,6 +12,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Hello world" << std::endl;
     print("library reference");
+    print2("library reference");
 
     std::string a;
     std::cin >> a;

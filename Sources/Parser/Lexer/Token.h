@@ -62,7 +62,7 @@ public:
     const auto& content() const { return *m_content; }
 
     auto& content_ptr() { return m_content; }
-    auto& content_ptr() const { return m_content; }
+    const auto& content_ptr() const { return m_content; }
 
     Type type() const { return m_type; }
     int nesting() const { return m_nesting; }

@@ -1,16 +1,18 @@
 #pragma once
 
+#include "../Utils/Logger.h"
 #include "Lexer/Lexer.h"
 #include "Lexer/Token.h"
-#include "../Utils/Logger.h"
 
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #pragma once
 
 using TokenProcessor = const std::function<void(const Token&)>&;
+using TokenContentProcessor = const std::function<void(const std::shared_ptr<std::string>& content)>&;
 
 class Context;
 
@@ -36,12 +38,12 @@ private:
 
     void parse_line_by_line(size_t nesting, TokenProcessor);
 
-    Token const* parse_single_argument();
-    Token const* parse_single_argument_of_rule(const Token& rule);
+    std::shared_ptr<std::string> parse_single_argument(size_t line);
+    std::shared_ptr<std::string> parse_single_argument_of_rule(const Token& rule);
 
-    void parse_argument_list_of_rule(const Token& rule, TokenProcessor);
-    void parse_argument_list(TokenProcessor);
-    void parse_lined_argument_list(size_t line, TokenProcessor);
+    void parse_argument_list_of_rule(const Token& rule, TokenContentProcessor);
+    void parse_argument_list(TokenContentProcessor);
+    void parse_lined_argument_list(size_t line, TokenContentProcessor);
 
     void process_variables(bool can_fail);
 

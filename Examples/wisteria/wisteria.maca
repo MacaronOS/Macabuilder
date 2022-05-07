@@ -1,15 +1,14 @@
-Include:
-    kernel
-
 Define:
-    MOUNT_EXT2: fuse-ext2
-    DISK: drive.img
-    QEMU: qemu-system-i386
-    TARGET_EXEC: wisteriaOS
+    platform: x86
+    compiler: g++
+
+    target~aarch32:
+        platform: aarch32
+        compiler: arm-none-eabi-g++
 
 Commands:
     Install:
-        sudo [MOUNT_EXT2] [DISK] mountpoint -o rw+,
+        sudo mount_ext2 drive.img mountpoint -o rw+,
         sudo mkdir -p mountpoint/apps/,
         sudo umount mountpoint,
 
@@ -32,7 +31,8 @@ Build:
             Flags:
                 -std=c++17, -fno-use-cxa-atexit, -fno-rtti, -fno-exceptions,
 
-        s: Compiler: nasm
+        s:
+            Compiler: nasm
 
     Link:
         Linker: g++

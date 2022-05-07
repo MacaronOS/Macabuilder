@@ -1,10 +1,16 @@
 Build:
     Type: StaticLib
 
-    Src: library.cpp
+    Src:
+        *.cpp, **/*.cpp
+        *.{platform}.cxx, *.{platform}.s, **/*.{platform}.cxx, **/*.{platform}.s
 
     Extensions:
         cpp:
+            Compiler: g++
+            Flags: -std=c++17
+
+        cxx:
             Compiler: g++
             Flags: -std=c++17
 
