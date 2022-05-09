@@ -110,7 +110,7 @@ private:
 
     inline void mark_source_as_failed(const std::string& failed_source)
     {
-        m_failed_sources.insert(std::filesystem::proximate(directory(), failed_source));
+        m_failed_sources.insert(std::filesystem::proximate(failed_source, directory()));
     }
 
     inline void trigger_error(const std::string& error)
