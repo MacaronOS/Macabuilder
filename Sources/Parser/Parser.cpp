@@ -82,12 +82,14 @@ void Parser::parse_defines()
         parse_line_by_line(nesting, [&](const Token& key_or_lhs) {
             if (lookup()->type() == Token::Type::SubRule) {
                 eat();
-                auto value = eat();
-                if (!value || value->line() != key_or_lhs.line()) {
-                    trigger_error_on_line(key_or_lhs.line(), "invalid pair for a key");
-                }
+                std::vector<std::shared_ptr<std::string>> defines;
+                parse_argument_list_of_rule(*lookup(-1), [&](const std::shared_ptr<std::string>& content) {
+                    if (save_result) {
+                        defines.push_back(content);
+                    }
+                });
                 if (save_result) {
-                    context->m_defines.add_define(key_or_lhs.content(), value->content_ptr());
+                    context->m_defines.write_defines(key_or_lhs.content(), std::move(defines));
                 }
                 return;
             }
@@ -290,7 +292,7 @@ void Parser::parse_argument_list_of_rule(const Token& rule, TokenContentProcesso
     // multiple lines argument list
     if (sub_rule_nesting < lookup()->nesting()) {
         int multiple_lines_nesting = lookup()->nesting();
-        while (lookup() && lookup()->type() == Token::Type::Default && lookup()->nesting() == multiple_lines_nesting) {
+        while (lookup() && (lookup()->type() == Token::Type::Default || lookup()->type() == Token::Type::Variable) && lookup()->nesting() == multiple_lines_nesting) {
             parse_lined_argument_list(lookup()->line(), process_content);
         }
     }
@@ -298,7 +300,7 @@ void Parser::parse_argument_list_of_rule(const Token& rule, TokenContentProcesso
 
 void Parser::parse_lined_argument_list(size_t line, TokenContentProcessor process_content)
 {
-    auto arg = eat()->content_ptr();
+    std::shared_ptr<std::string> arg = nullptr;
 
     while (lookup()) {
         if (lookup()->line() != line) {
@@ -306,9 +308,11 @@ void Parser::parse_lined_argument_list(size_t line, TokenContentProcessor proces
         }
 
         if (lookup()->type() == Token::Type::Comma) {
-            process_content(arg);
-            arg = nullptr;
-            eat();
+            if (arg) {
+                process_content(arg);
+                arg = nullptr;
+                eat();
+            }
             continue;
         }
 
@@ -318,6 +322,36 @@ void Parser::parse_lined_argument_list(size_t line, TokenContentProcessor proces
             } else {
                 arg = std::make_shared<std::string>(*arg + eat()->content());
             }
+            continue;
+        }
+
+        if (lookup()->type() == Token::Type::Variable) {
+            auto variable_token = eat();
+            auto& variable_name = variable_token->content();
+            if (variable_name.empty()) {
+                trigger_error_on_line(variable_token->line(), "variable has no name");
+            }
+            if (!context->m_defines.defines().contains(variable_name)) {
+                trigger_error_on_line(variable_token->line(), "variable " + variable_name + " was not defined");
+            }
+
+            auto& define_list = context->m_defines.defines()[variable_name];
+
+            for (size_t i = 0 ; i < define_list.size() ; i++) {
+                auto& content = define_list[i];
+
+                if (!arg) {
+                    arg = content;
+                } else {
+                    arg = std::make_shared<std::string>(*arg + *content);
+                }
+
+                if (i < define_list.size() - 1) {
+                    process_content(arg);
+                    arg = nullptr;
+                }
+            }
+
             continue;
         }
 
@@ -331,22 +365,5 @@ void Parser::parse_lined_argument_list(size_t line, TokenContentProcessor proces
 
 void Parser::process_variables(bool can_fail)
 {
-    lexer.process_variables([&](Token& token) {
-        auto& variable_name = token.content();
-        if (variable_name.empty()) {
-            if (!can_fail) {
-                return;
-            }
-            trigger_error_on_line(token.line(), "variable has no name");
-        }
-        if (!context->m_defines.defines().contains(variable_name)) {
-            if (!can_fail) {
-                return;
-            }
-            trigger_error_on_line(token.line(), "variable " + variable_name + " was not defined");
-        }
-
-        token.m_content = context->m_defines.defines()[variable_name];
-        token.m_type = Token::Type::Default;
-    });
+    return;
 }

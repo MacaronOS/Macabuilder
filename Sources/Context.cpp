@@ -90,7 +90,7 @@ bool Context::merge_children()
         if (child->operation() == Context::Operation::Parse) {
             // merging Default field
             for (auto& define : child->m_defines.defines()) {
-                m_defines.add_define(define.first, define.second);
+                m_defines.add_defines(define.first, define.second);
             }
 
             // merging Commands field
